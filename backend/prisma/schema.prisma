@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum UserStatus {
+  ACTIVE
+  NOT_ACTIVE
+}
+
+enum SenderType {
+  GMAIL
+  DOMAIN
+  MASK
+}
+
+enum SenderAccountStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum SenderHealthStatus {
+  ACTIVE
+  BURNED
+  BANNED
+  NOT_WORKING
+}
+
+enum DeliveryStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+model User {
+  id          String                 @id @default(cuid())
+  firstName   String
+  lastName    String
+  pseudoName  String
+  email       String                 @unique
+  passwordHash String
+  role        Role
+  status      UserStatus             @default(ACTIVE)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  allocations UserSenderAllocation[]
+  deliveries  DeliveryRecord[]
+  sessions    UserSession[]
+}
+
+model UserSession {
+  id               String    @id
+  userId           String
+  refreshTokenHash String
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  replacedById     String?
+  ipAddress        String?
+  userAgent        String?
+  lastUsedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model SenderAccount {
+  id                   String               @id @default(cuid())
+  type                 SenderType
+  label                String
+  email                String
+  provider             String
+  status               SenderAccountStatus  @default(ACTIVE)
+  healthStatus         SenderHealthStatus   @default(ACTIVE)
+  lastHealthCheckAt    DateTime?
+  lastHealthMessage    String?
+  dailyLimit           Int
+  encryptionKeyHint    String?
+  credentialsEncrypted String?
+  metadata             Json?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  deliveries           DeliveryRecord[]
+
+  @@unique([type, email])
+}
+
+model SenderPolicy {
+  id         String     @id @default(cuid())
+  senderType SenderType @unique
+  dailyLimit Int
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model UserSenderAllocation {
+  id            String     @id @default(cuid())
+  userId        String
+  senderType    SenderType
+  assignedLimit Int
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, senderType])
+}
+
+model DeliveryRecord {
+  id                String          @id @default(cuid())
+  deliveryId        String
+  userId            String
+  senderType        SenderType
+  senderAccountId   String?
+  recipientEmail    String
+  status            DeliveryStatus  @default(QUEUED)
+  providerMessageId String?
+  messageIdHeader   String?
+  errorMessage      String?
+  sentAt            DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderAccount     SenderAccount?  @relation(fields: [senderAccountId], references: [id], onDelete: SetNull)
+
+  @@index([deliveryId])
+  @@index([userId, senderType, createdAt])
+  @@index([senderAccountId, createdAt])
+}
