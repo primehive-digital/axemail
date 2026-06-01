@@ -1,14 +1,14 @@
 import crypto from "node:crypto";
 
-import { DeliveryStatus, Prisma, SenderType } from "@prisma/client";
+import { DeliveryStatus, Prisma, MailerType } from "@prisma/client";
 
 import { env } from "@/config/env";
 import { prisma } from "@/config/prisma";
 import { buildEmailHeaders, buildEnvelope } from "@/services/email-composer.service";
 import { resolveUserContext } from "@/services/context.service";
-import { dispatchMessage } from "@/services/sender-dispatch.service";
+import { dispatchMessage } from "@/services/mailer-dispatch.service";
 import { getMaskServerHealth } from "@/services/mask-server.service";
-import type { SenderComposerPayload } from "@/types/sender.types";
+import type { MailerComposerPayload } from "@/types/mailer.types";
 import { AppError } from "@/utils/app-error";
 import { startOfTodayUtc } from "@/utils/date";
 
@@ -17,7 +17,7 @@ const reservedDeliveryStatuses = [
   DeliveryStatus.SENT,
 ] as const;
 
-export async function sendComposerCampaign(input: SenderComposerPayload) {
+export async function sendComposerCampaign(input: MailerComposerPayload) {
   const user = await resolveUserContext({ role: input.role, userId: input.userId });
   const deliveryId = crypto.randomUUID();
 
@@ -26,7 +26,7 @@ export async function sendComposerCampaign(input: SenderComposerPayload) {
       return reserveDelivery(transaction, {
         deliveryId,
         userId: user.id,
-        senderType: input.senderType,
+        mailerType: input.mailerType,
         to: input.to,
       });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
@@ -36,7 +36,7 @@ export async function sendComposerCampaign(input: SenderComposerPayload) {
     deliveryId: reservedDelivery.id,
     recipientCount: reservedDelivery.recipientCount,
     userId: user.id,
-    senderType: input.senderType.toUpperCase() as SenderType,
+    mailerType: input.mailerType.toUpperCase() as MailerType,
     fromName: input.fromName,
     fromEmail: input.fromEmail,
     replyTo: input.replyTo,
@@ -53,7 +53,7 @@ async function processDelivery(input: {
   deliveryId: string;
   recipientCount: number;
   userId: string;
-  senderType: SenderType;
+  mailerType: MailerType;
   fromName: string;
   fromEmail?: string;
   replyTo: string;
@@ -86,23 +86,23 @@ async function processDelivery(input: {
 
   for (let index = 0; index < deliveries.length; index += 1) {
     const delivery = deliveries[index];
-    const isMaskSender = input.senderType === SenderType.MASK;
+    const isMaskSender = input.mailerType === MailerType.MASK;
 
-    if (!isMaskSender && !delivery.senderAccountId) {
+    if (!isMaskSender && !delivery.smtpMailerAccountId) {
       await prisma.deliveryRecord.update({
         where: { id: delivery.id },
         data: {
           status: DeliveryStatus.FAILED,
-          errorMessage: "Reserved sender account is missing.",
+          errorMessage: "Reserved SMTP mailer account is missing.",
         },
       });
       failedCount += 1;
       continue;
     }
 
-    const assignedAccount = delivery.senderAccountId
-      ? await prisma.senderAccount.findUnique({
-          where: { id: delivery.senderAccountId },
+    const assignedAccount = delivery.smtpMailerAccountId
+      ? await prisma.smtpMailerAccount.findUnique({
+          where: { id: delivery.smtpMailerAccountId },
         })
       : null;
 
@@ -116,30 +116,30 @@ async function processDelivery(input: {
         where: { id: delivery.id },
         data: {
           status: DeliveryStatus.FAILED,
-          errorMessage: "Reserved sender account is not available.",
+          errorMessage: "Reserved SMTP mailer account is not available.",
         },
       });
       failedCount += 1;
       continue;
     }
 
-    const senderEmail =
-      input.senderType === SenderType.MASK
+    const fromEmail =
+      input.mailerType === MailerType.MASK
         ? input.fromEmail ?? ""
         : assignedAccount!.email;
 
     const headers = buildEmailHeaders({
       deliveryId: input.deliveryId,
       deliveryRecordId: delivery.id,
-      senderType: input.senderType.toLowerCase(),
+      mailerType: input.mailerType.toLowerCase(),
       previewText: input.previewText,
     });
 
     const dispatchPayload = {
       provider: assignedAccount?.provider ?? "mask-vps",
-      senderAccountId: assignedAccount?.id ?? "mask-server",
-      senderEmail,
-      senderName: input.fromName,
+      smtpMailerAccountId: assignedAccount?.id ?? "mask-server",
+      fromEmail,
+      fromName: input.fromName,
       to: delivery.recipientEmail,
       cc: input.cc,
       bcc: input.bcc,
@@ -151,9 +151,9 @@ async function processDelivery(input: {
       headers,
       envelope: buildEnvelope({
         provider: assignedAccount?.provider ?? "mask-vps",
-        senderAccountId: assignedAccount?.id ?? "mask-server",
-        senderEmail,
-        senderName: input.fromName,
+        smtpMailerAccountId: assignedAccount?.id ?? "mask-server",
+        fromEmail,
+        fromName: input.fromName,
         to: delivery.recipientEmail,
         cc: input.cc,
         bcc: input.bcc,
@@ -163,7 +163,7 @@ async function processDelivery(input: {
         html: input.html,
         attachments: input.attachments,
         headers,
-        envelope: { from: senderEmail, to: [] },
+        envelope: { from: fromEmail, to: [] },
         metadata: {
           deliveryId: input.deliveryId,
           deliveryRecordId: delivery.id,
@@ -179,9 +179,9 @@ async function processDelivery(input: {
 
     try {
       const result = await dispatchMessage(
-        input.senderType,
+        input.mailerType,
         assignedAccount ?? {
-          email: senderEmail,
+          email: fromEmail,
           provider: "mask-vps",
         },
         dispatchPayload,
@@ -218,10 +218,10 @@ async function processDelivery(input: {
     }
 
     if (
-      (input.senderType === SenderType.DOMAIN || input.senderType === SenderType.GMAIL) &&
+      (input.mailerType === MailerType.DOMAIN || input.mailerType === MailerType.GMAIL) &&
       index < deliveries.length - 1
     ) {
-      await sleep(getCooldownSeconds(input.senderType) * 1000);
+      await sleep(getCooldownSeconds(input.mailerType) * 1000);
     }
   }
 
@@ -244,22 +244,22 @@ async function reserveDelivery(
   input: {
     deliveryId: string;
     userId: string;
-    senderType: "gmail" | "domain" | "mask";
+    mailerType: "gmail" | "domain" | "mask";
     to: string;
   },
 ) {
-  const senderType = input.senderType.toUpperCase() as SenderType;
+  const mailerType = input.mailerType.toUpperCase() as MailerType;
   const recipients = splitAddresses(input.to);
 
   if (!recipients.length) {
     throw new AppError("At least one recipient is required.", 400);
   }
 
-  const allocation = await transaction.userSenderAllocation.findUnique({
+  const allocation = await transaction.userMailerAllocation.findUnique({
     where: {
-      userId_senderType: {
+      userId_mailerType: {
         userId: input.userId,
-        senderType,
+        mailerType,
       },
     },
   });
@@ -269,7 +269,7 @@ async function reserveDelivery(
   const reservedForUser = await transaction.deliveryRecord.count({
     where: {
       userId: input.userId,
-      senderType,
+      mailerType,
       createdAt: { gte: startOfTodayUtc() },
       status: { in: reservedDeliveryStatuses as unknown as DeliveryStatus[] },
     },
@@ -278,20 +278,20 @@ async function reserveDelivery(
   const remainingQuota = Math.max(assignedLimit - reservedForUser, 0);
 
   if (remainingQuota < recipients.length) {
-    throw new AppError("Assigned sender quota exceeded.", 409, {
+    throw new AppError("Assigned mailer quota exceeded.", 409, {
       remaining: remainingQuota,
     });
   }
 
-  const accountAssignments = await reserveSenderAccounts(transaction, senderType, recipients.length);
+  const accountAssignments = await reserveSmtpMailerAccounts(transaction, mailerType, recipients.length);
 
   await transaction.deliveryRecord.createMany({
     data: recipients.map((recipientEmail, index) => ({
       deliveryId: input.deliveryId,
       userId: input.userId,
-      senderType,
+      mailerType,
       recipientEmail,
-      senderAccountId: accountAssignments[index]?.id ?? null,
+      smtpMailerAccountId: accountAssignments[index]?.id ?? null,
       status: DeliveryStatus.QUEUED,
     })),
   });
@@ -302,26 +302,26 @@ async function reserveDelivery(
   };
 }
 
-async function reserveSenderAccounts(
+async function reserveSmtpMailerAccounts(
   transaction: Prisma.TransactionClient,
-  senderType: SenderType,
+  mailerType: MailerType,
   recipientCount: number,
 ) {
-  if (senderType === SenderType.MASK) {
+  if (mailerType === MailerType.MASK) {
     const health = await getMaskServerHealth();
 
     if (health.status !== "active") {
       throw new AppError("Mask server is not working.", 409);
     }
 
-    const policy = await transaction.senderPolicy.findUnique({
-      where: { senderType: SenderType.MASK },
+    const policy = await transaction.mailerPolicy.findUnique({
+      where: { mailerType: MailerType.MASK },
     });
 
     const dailyLimit = policy?.dailyLimit ?? 2000;
     const usedToday = await transaction.deliveryRecord.count({
       where: {
-        senderType: SenderType.MASK,
+        mailerType: MailerType.MASK,
         createdAt: { gte: startOfTodayUtc() },
         status: { in: reservedDeliveryStatuses as unknown as DeliveryStatus[] },
       },
@@ -339,26 +339,26 @@ async function reserveSenderAccounts(
     return Array.from({ length: recipientCount }, () => null);
   }
 
-  const accounts = await transaction.senderAccount.findMany({
-    where: { type: senderType, status: "ACTIVE", healthStatus: "ACTIVE" },
+  const accounts = await transaction.smtpMailerAccount.findMany({
+    where: { type: mailerType, status: "ACTIVE", healthStatus: "ACTIVE" },
     orderBy: { createdAt: "asc" },
   });
 
   if (!accounts.length) {
-    throw new AppError("No active sender accounts available.", 409);
+    throw new AppError("No active SMTP mailer accounts available.", 409);
   }
 
   const usageRows = await transaction.deliveryRecord.groupBy({
-    by: ["senderAccountId"],
+    by: ["smtpMailerAccountId"],
     _count: { _all: true },
     where: {
-      senderAccountId: { in: accounts.map((account) => account.id) },
+      smtpMailerAccountId: { in: accounts.map((account) => account.id) },
       createdAt: { gte: startOfTodayUtc() },
       status: { in: reservedDeliveryStatuses as unknown as DeliveryStatus[] },
     },
   });
 
-  const usageMap = new Map(usageRows.map((row) => [row.senderAccountId ?? "", row._count._all]));
+  const usageMap = new Map(usageRows.map((row) => [row.smtpMailerAccountId ?? "", row._count._all]));
 
   const eligible = accounts
     .map((account) => ({
@@ -426,9 +426,9 @@ function splitAddresses(value?: string) {
     .filter(Boolean);
 }
 
-function getCooldownSeconds(senderType: SenderType) {
+function getCooldownSeconds(mailerType: MailerType) {
   const weights =
-    senderType === SenderType.GMAIL
+    mailerType === MailerType.GMAIL
       ? [...env.GMAIL_COOLDOWN_SCHEDULE]
       : [...env.DOMAIN_COOLDOWN_SCHEDULE];
   if (weights.length === 5) {

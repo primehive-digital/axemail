@@ -4,10 +4,11 @@ import helmet from "helmet";
 
 import { env } from "@/config/env";
 import { authRouter } from "@/modules/auth/auth.routes";
+import { dashboardRouter } from "@/modules/dashboard/dashboard.routes";
 import { healthRouter } from "@/modules/health/health.routes";
 import { reportsRouter } from "@/modules/reports/reports.routes";
-import { senderAccountsRouter } from "@/modules/sender-accounts/sender-accounts.routes";
-import { sendersRouter } from "@/modules/senders/senders.routes";
+import { smtpMailerAccountsRouter } from "@/modules/smtp-mailer-accounts/smtp-mailer-accounts.routes";
+import { mailersRouter } from "@/modules/mailers/mailers.routes";
 import { usageRouter } from "@/modules/usage/usage.routes";
 import { usersRouter } from "@/modules/users/users.routes";
 import { attachAuth } from "@/middleware/auth";
@@ -40,10 +41,11 @@ export function createApp() {
   app.use("/api", healthRouter);
   app.use("/api", authRouter);
   app.use("/api", usersRouter);
+  app.use("/api", dashboardRouter);
   app.use("/api", usageRouter);
   app.use("/api", reportsRouter);
-  app.use("/api", senderAccountsRouter);
-  app.use("/api", sendersRouter);
+  app.use("/api", smtpMailerAccountsRouter);
+  app.use("/api", mailersRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

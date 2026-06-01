@@ -15,7 +15,7 @@ const attachmentSchema = z.object({
   contentBase64: z.string().min(1),
 });
 
-export const gmailSenderSchema = z.object({
+export const gmailMailerSchema = z.object({
   fromName: z.string().min(1),
   to: z.string().min(1),
   replyTo: z.string().email(),
@@ -27,17 +27,19 @@ export const gmailSenderSchema = z.object({
   content: z.string().min(1),
 });
 
-export const domainSenderSchema = z.object({
+export const domainMailerSchema = z.object({
   fromName: z.string().min(1),
   to: z.string().min(1),
   replyTo: z.string().email(),
+  cc: z.string().optional(),
+  bcc: z.string().optional(),
   subject: z.string().min(1),
   previewText: z.string().optional(),
   attachments: z.array(attachmentSchema).optional(),
   content: z.string().min(1),
 });
 
-export const maskSenderSchema = z.object({
+export const maskMailerSchema = z.object({
   fromName: z.string().min(1),
   fromEmail: basicEmailSchema,
   to: z.string().min(1),

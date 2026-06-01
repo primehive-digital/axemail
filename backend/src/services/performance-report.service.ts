@@ -1,4 +1,4 @@
-import { DeliveryStatus, Role, SenderType } from "@prisma/client";
+import { DeliveryStatus, Role, MailerType } from "@prisma/client";
 
 import { prisma } from "@/config/prisma";
 import type {
@@ -6,11 +6,11 @@ import type {
   PerformanceReportDto,
   PerformanceReportEmployeeDto,
 } from "@/types/api.types";
-import { mapSenderType } from "@/utils/enum-mappers";
+import { mapMailerType } from "@/utils/enum-mappers";
 import { cleanupExpiredDeliveryRecords, getReportRetentionCutoff } from "@/services/report-retention.service";
 import { AppError } from "@/utils/app-error";
 
-const senderTypes = [SenderType.GMAIL, SenderType.DOMAIN, SenderType.MASK] as const;
+const mailerTypes = [MailerType.GMAIL, MailerType.DOMAIN, MailerType.MASK] as const;
 
 export async function getPerformanceReport(input: {
   month?: string;
@@ -51,7 +51,7 @@ export async function getPerformanceReport(input: {
       },
       select: {
         userId: true,
-        senderType: true,
+        mailerType: true,
         status: true,
         createdAt: true,
         sentAt: true,
@@ -69,7 +69,7 @@ export async function getPerformanceReport(input: {
       continue;
     }
 
-    const key = buildDeliveryKey(delivery.userId, delivery.senderType, toDateKey(activityDate));
+    const key = buildDeliveryKey(delivery.userId, delivery.mailerType, toDateKey(activityDate));
     const current = deliveryMap.get(key) ?? { sent: 0, failed: 0, queued: 0 };
 
     if (delivery.status === DeliveryStatus.SENT) {
@@ -84,20 +84,20 @@ export async function getPerformanceReport(input: {
   }
 
   const employees = users.map<PerformanceReportEmployeeDto>((user) => {
-    const senderTargets = senderTypes.reduce<Record<"gmail" | "domain" | "mask", number>>(
-      (accumulator, senderType) => {
-        accumulator[mapSenderType(senderType)] =
-          user.allocations.find((allocation) => allocation.senderType === senderType)?.assignedLimit ?? 0;
+    const mailerTargets = mailerTypes.reduce<Record<"gmail" | "domain" | "mask", number>>(
+      (accumulator, mailerType) => {
+        accumulator[mapMailerType(mailerType)] =
+          user.allocations.find((allocation) => allocation.mailerType === mailerType)?.assignedLimit ?? 0;
         return accumulator;
       },
       { gmail: 0, domain: 0, mask: 0 },
     );
-    const dailyTarget = senderTargets.gmail + senderTargets.domain + senderTargets.mask;
+    const dailyTarget = mailerTargets.gmail + mailerTargets.domain + mailerTargets.mask;
     const monthTarget = dailyTarget * range.daysTracked;
     const daily = dayKeys.map<PerformanceReportDailyDto>((date) => {
-      const gmail = deliveryMap.get(buildDeliveryKey(user.id, SenderType.GMAIL, date)) ?? emptyDeliveryCount();
-      const domain = deliveryMap.get(buildDeliveryKey(user.id, SenderType.DOMAIN, date)) ?? emptyDeliveryCount();
-      const mask = deliveryMap.get(buildDeliveryKey(user.id, SenderType.MASK, date)) ?? emptyDeliveryCount();
+      const gmail = deliveryMap.get(buildDeliveryKey(user.id, MailerType.GMAIL, date)) ?? emptyDeliveryCount();
+      const domain = deliveryMap.get(buildDeliveryKey(user.id, MailerType.DOMAIN, date)) ?? emptyDeliveryCount();
+      const mask = deliveryMap.get(buildDeliveryKey(user.id, MailerType.MASK, date)) ?? emptyDeliveryCount();
 
       return {
         date,
@@ -109,12 +109,12 @@ export async function getPerformanceReport(input: {
         queued: gmail.queued + domain.queued + mask.queued,
       };
     });
-    const senderTotals = {
+    const mailerTotals = {
       gmail: daily.reduce((total, day) => total + day.gmail, 0),
       domain: daily.reduce((total, day) => total + day.domain, 0),
       mask: daily.reduce((total, day) => total + day.mask, 0),
     };
-    const totalSent = senderTotals.gmail + senderTotals.domain + senderTotals.mask;
+    const totalSent = mailerTotals.gmail + mailerTotals.domain + mailerTotals.mask;
     const totalFailed = daily.reduce((total, day) => total + day.failed, 0);
     const totalQueued = daily.reduce((total, day) => total + day.queued, 0);
     const inactiveDays = dailyTarget === 0 ? 0 : daily.filter((day) => day.total === 0).length;
@@ -133,8 +133,8 @@ export async function getPerformanceReport(input: {
       completionRate: monthTarget === 0 ? 0 : Math.min(Math.round((totalSent / monthTarget) * 100), 100),
       isTargetMet: monthTarget > 0 && totalSent >= monthTarget,
       inactiveDays,
-      senderTargets,
-      senderTotals,
+      mailerTargets,
+      mailerTotals,
       daily,
     };
   });
@@ -349,8 +349,8 @@ function buildAvailableMonths(start: Date, end: Date) {
   return months.reverse();
 }
 
-function buildDeliveryKey(userId: string, senderType: SenderType, date: string) {
-  return `${userId}:${senderType}:${date}`;
+function buildDeliveryKey(userId: string, mailerType: MailerType, date: string) {
+  return `${userId}:${mailerType}:${date}`;
 }
 
 function emptyDeliveryCount() {

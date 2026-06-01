@@ -1,58 +1,58 @@
-import { DeliveryStatus, Role, SenderType } from "@prisma/client";
+import { DeliveryStatus, Role, MailerType } from "@prisma/client";
 
 import { prisma } from "@/config/prisma";
-import type { SenderQuotaDto, UserUsageDto } from "@/types/api.types";
+import type { MailerQuotaDto, UserUsageDto } from "@/types/api.types";
 import { AppError } from "@/utils/app-error";
 import { startOfTodayUtc } from "@/utils/date";
-import { mapSenderType } from "@/utils/enum-mappers";
+import { mapMailerType } from "@/utils/enum-mappers";
 
-const senderOrder = [SenderType.GMAIL, SenderType.DOMAIN, SenderType.MASK];
+const mailerOrder = [MailerType.GMAIL, MailerType.DOMAIN, MailerType.MASK];
 const countedDeliveryStatuses = [DeliveryStatus.QUEUED, DeliveryStatus.SENT] as const;
 
-export async function getSenderTypeDailyLimitMap() {
+export async function getMailerTypeDailyLimitMap() {
   const [grouped, policies] = await Promise.all([
-    prisma.senderAccount.groupBy({
+    prisma.smtpMailerAccount.groupBy({
       by: ["type"],
       where: { status: "ACTIVE" },
       _sum: { dailyLimit: true },
     }),
-    prisma.senderPolicy.findMany(),
+    prisma.mailerPolicy.findMany(),
   ]);
 
-  const capacityMap = grouped.reduce<Record<SenderType, number>>(
+  const capacityMap = grouped.reduce<Record<MailerType, number>>(
     (accumulator, item) => {
       accumulator[item.type] = item._sum.dailyLimit ?? 0;
       return accumulator;
     },
     {
-      [SenderType.GMAIL]: 0,
-      [SenderType.DOMAIN]: 0,
-      [SenderType.MASK]: 0,
+      [MailerType.GMAIL]: 0,
+      [MailerType.DOMAIN]: 0,
+      [MailerType.MASK]: 0,
     },
   );
 
-  const maskPolicy = policies.find((item) => item.senderType === SenderType.MASK);
-  capacityMap[SenderType.MASK] = maskPolicy?.dailyLimit ?? 2000;
+  const maskPolicy = policies.find((item) => item.mailerType === MailerType.MASK);
+  capacityMap[MailerType.MASK] = maskPolicy?.dailyLimit ?? 2000;
 
   return capacityMap;
 }
 
-async function getSenderTypeActiveCountMap() {
-  const grouped = await prisma.senderAccount.groupBy({
+async function getMailerTypeActiveCountMap() {
+  const grouped = await prisma.smtpMailerAccount.groupBy({
     by: ["type"],
     where: { status: "ACTIVE" },
     _count: { _all: true },
   });
 
-  return grouped.reduce<Record<SenderType, number>>(
+  return grouped.reduce<Record<MailerType, number>>(
     (accumulator, item) => {
       accumulator[item.type] = item._count._all ?? 0;
       return accumulator;
     },
     {
-      [SenderType.GMAIL]: 0,
-      [SenderType.DOMAIN]: 0,
-      [SenderType.MASK]: 1,
+      [MailerType.GMAIL]: 0,
+      [MailerType.DOMAIN]: 0,
+      [MailerType.MASK]: 1,
     },
   );
 }
@@ -71,12 +71,12 @@ export async function getUsageByRole(): Promise<UserUsageDto[]> {
 
 export async function buildUserUsage(userId: string): Promise<UserUsageDto> {
   const [allocationRows, usageRows, totalLimitMap] = await Promise.all([
-    prisma.userSenderAllocation.findMany({
+    prisma.userMailerAllocation.findMany({
       where: { userId },
-      orderBy: { senderType: "asc" },
+      orderBy: { mailerType: "asc" },
     }),
     prisma.deliveryRecord.groupBy({
-      by: ["senderType"],
+      by: ["mailerType"],
       _count: { _all: true },
       where: {
         userId,
@@ -84,33 +84,33 @@ export async function buildUserUsage(userId: string): Promise<UserUsageDto> {
         status: { in: countedDeliveryStatuses as unknown as DeliveryStatus[] },
       },
     }),
-    getSenderTypeDailyLimitMap(),
+    getMailerTypeDailyLimitMap(),
   ]);
 
-  const usageByType = usageRows.reduce<Record<SenderType, number>>(
+  const usageByType = usageRows.reduce<Record<MailerType, number>>(
     (accumulator, row) => {
-      accumulator[row.senderType] += row._count._all;
+      accumulator[row.mailerType] += row._count._all;
       return accumulator;
     },
     {
-      [SenderType.GMAIL]: 0,
-      [SenderType.DOMAIN]: 0,
-      [SenderType.MASK]: 0,
+      [MailerType.GMAIL]: 0,
+      [MailerType.DOMAIN]: 0,
+      [MailerType.MASK]: 0,
     },
   );
 
-  const quotaMap = new Map(allocationRows.map((row) => [row.senderType, row]));
+  const quotaMap = new Map(allocationRows.map((row) => [row.mailerType, row]));
 
-  const senderQuotas: SenderQuotaDto[] = senderOrder.map((senderType) => {
-    const allocation = quotaMap.get(senderType);
+  const mailerQuotas: MailerQuotaDto[] = mailerOrder.map((mailerType) => {
+    const allocation = quotaMap.get(mailerType);
     const assignedLimit = allocation?.assignedLimit ?? 0;
-    const used = usageByType[senderType] ?? 0;
-    const totalLimit = totalLimitMap[senderType] ?? 0;
+    const used = usageByType[mailerType] ?? 0;
+    const totalLimit = totalLimitMap[mailerType] ?? 0;
 
     return {
-      id: allocation?.id ?? `${userId}-${senderType.toLowerCase()}`,
-      type: mapSenderType(senderType),
-      label: buildQuotaLabel(senderType, userId),
+      id: allocation?.id ?? `${userId}-${mailerType.toLowerCase()}`,
+      type: mapMailerType(mailerType),
+      label: buildQuotaLabel(mailerType, userId),
       totalLimit,
       assignedLimit,
       used,
@@ -120,7 +120,7 @@ export async function buildUserUsage(userId: string): Promise<UserUsageDto> {
 
   return {
     userId,
-    senderQuotas,
+    mailerQuotas,
   };
 }
 
@@ -139,54 +139,54 @@ export async function assignUserLimits(input: {
   }
 
   if (targetUser.role !== Role.EMPLOYEE) {
-    throw new AppError("Sender limits can only be assigned to employees.", 403);
+    throw new AppError("Mailer limits can only be assigned to employees.", 403);
   }
 
-  const currentAllocations = await prisma.userSenderAllocation.findMany({
+  const currentAllocations = await prisma.userMailerAllocation.findMany({
     where: { userId: input.userId },
   });
 
   const currentAllocationMap = new Map(
-    currentAllocations.map((row) => [row.senderType, row.assignedLimit]),
+    currentAllocations.map((row) => [row.mailerType, row.assignedLimit]),
   );
 
   const [capacityMap, assignedByType] = await Promise.all([
-    getSenderTypeDailyLimitMap(),
-    prisma.userSenderAllocation.groupBy({
-      by: ["senderType"],
+    getMailerTypeDailyLimitMap(),
+    prisma.userMailerAllocation.groupBy({
+      by: ["mailerType"],
       where: { user: { role: Role.EMPLOYEE } },
       _sum: { assignedLimit: true },
     }),
   ]);
 
-  const assignedMap = assignedByType.reduce<Record<SenderType, number>>(
+  const assignedMap = assignedByType.reduce<Record<MailerType, number>>(
     (accumulator, row) => {
-      accumulator[row.senderType] = row._sum.assignedLimit ?? 0;
+      accumulator[row.mailerType] = row._sum.assignedLimit ?? 0;
       return accumulator;
     },
     {
-      [SenderType.GMAIL]: 0,
-      [SenderType.DOMAIN]: 0,
-      [SenderType.MASK]: 0,
+      [MailerType.GMAIL]: 0,
+      [MailerType.DOMAIN]: 0,
+      [MailerType.MASK]: 0,
     },
   );
 
-  const rows: Array<{ senderType: SenderType; assignedLimit: number }> = [
-    { senderType: SenderType.GMAIL, assignedLimit: input.gmail },
-    { senderType: SenderType.DOMAIN, assignedLimit: input.domain },
-    { senderType: SenderType.MASK, assignedLimit: input.mask },
+  const rows: Array<{ mailerType: MailerType; assignedLimit: number }> = [
+    { mailerType: MailerType.GMAIL, assignedLimit: input.gmail },
+    { mailerType: MailerType.DOMAIN, assignedLimit: input.domain },
+    { mailerType: MailerType.MASK, assignedLimit: input.mask },
   ];
 
   for (const row of rows) {
-    const currentAssigned = currentAllocationMap.get(row.senderType) ?? 0;
-    const totalCapacity = capacityMap[row.senderType] ?? 0;
-    const remainingCapacity = Math.max(totalCapacity - assignedMap[row.senderType], 0);
+    const currentAssigned = currentAllocationMap.get(row.mailerType) ?? 0;
+    const totalCapacity = capacityMap[row.mailerType] ?? 0;
+    const remainingCapacity = Math.max(totalCapacity - assignedMap[row.mailerType], 0);
 
     if (row.assignedLimit > currentAssigned && row.assignedLimit > remainingCapacity) {
-      throw new AppError("Assigned limit exceeds remaining sender capacity.", 409, {
-        senderType: mapSenderType(row.senderType),
+      throw new AppError("Assigned limit exceeds remaining mailer capacity.", 409, {
+        mailerType: mapMailerType(row.mailerType),
         totalCapacity,
-        currentlyAssigned: assignedMap[row.senderType],
+        currentlyAssigned: assignedMap[row.mailerType],
         currentUserAssigned: currentAssigned,
         requestedAssigned: row.assignedLimit,
         remainingCapacity,
@@ -196,16 +196,16 @@ export async function assignUserLimits(input: {
 
   await prisma.$transaction(
     rows.map((row) =>
-      prisma.userSenderAllocation.upsert({
+      prisma.userMailerAllocation.upsert({
         where: {
-          userId_senderType: {
+          userId_mailerType: {
             userId: input.userId,
-            senderType: row.senderType,
+            mailerType: row.mailerType,
           },
         },
         create: {
           userId: input.userId,
-          senderType: row.senderType,
+          mailerType: row.mailerType,
           assignedLimit: row.assignedLimit,
         },
         update: {
@@ -218,34 +218,34 @@ export async function assignUserLimits(input: {
   return buildUserUsage(input.userId);
 }
 
-export async function getSenderAvailability(input: {
-  senderType: SenderType;
+export async function getMailerAvailability(input: {
+  mailerType: MailerType;
   userId: string;
 }) {
   const [capacityMap, activeCountMap, usage] = await Promise.all([
-    getSenderTypeDailyLimitMap(),
-    getSenderTypeActiveCountMap(),
+    getMailerTypeDailyLimitMap(),
+    getMailerTypeActiveCountMap(),
     buildUserUsage(input.userId),
   ]);
 
-  const quota = usage.senderQuotas.find(
-    (item) => item.type === mapSenderType(input.senderType),
+  const quota = usage.mailerQuotas.find(
+    (item) => item.type === mapMailerType(input.mailerType),
   );
 
   return {
-    senderType: mapSenderType(input.senderType),
-    dailyCapacity: capacityMap[input.senderType] ?? 0,
-    activeAccounts: activeCountMap[input.senderType] ?? 0,
+    mailerType: mapMailerType(input.mailerType),
+    dailyCapacity: capacityMap[input.mailerType] ?? 0,
+    activeAccounts: activeCountMap[input.mailerType] ?? 0,
     quota,
   };
 }
 
-function buildQuotaLabel(senderType: SenderType, userId: string) {
-  if (senderType === SenderType.GMAIL) {
+function buildQuotaLabel(mailerType: MailerType, userId: string) {
+  if (mailerType === MailerType.GMAIL) {
     return "Gmail allocation";
   }
 
-  if (senderType === SenderType.DOMAIN) {
+  if (mailerType === MailerType.DOMAIN) {
     return "Domain allocation";
   }
 

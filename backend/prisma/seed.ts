@@ -2,7 +2,7 @@ import "dotenv/config";
 
 import { PrismaNeon } from "@prisma/adapter-neon";
 import argon2 from "argon2";
-import { PrismaClient, Role, UserStatus } from "@prisma/client";
+import { MailerType, PrismaClient, Role, UserStatus } from "@prisma/client";
 
 const adapter = new PrismaNeon({
   connectionString: process.env.DATABASE_URL ?? "",
@@ -22,20 +22,44 @@ async function main() {
 
   await prisma.userSession.deleteMany();
   await prisma.deliveryRecord.deleteMany();
-  await prisma.userSenderAllocation.deleteMany();
-  await prisma.senderAccount.deleteMany();
-  await prisma.senderPolicy.deleteMany();
+  await prisma.userMailerAllocation.deleteMany();
+  await prisma.smtpMailerAccount.deleteMany();
+  await prisma.mailerPolicy.deleteMany();
+  await prisma.emailTemplate.deleteMany();
   await prisma.user.deleteMany();
 
   await prisma.user.create({
     data: {
       firstName: "Admin",
-      lastName: "Athurity",
+      lastName: "Authority",
       pseudoName: "Control Master",
       email: "admin@axemail.cloud",
       passwordHash: adminPasswordHash,
       role: Role.ADMIN,
       status: UserStatus.ACTIVE,
+    },
+  });
+
+  await prisma.mailerPolicy.createMany({
+    data: [
+      { mailerType: MailerType.GMAIL, dailyLimit: 150 },
+      { mailerType: MailerType.DOMAIN, dailyLimit: 200 },
+      { mailerType: MailerType.MASK, dailyLimit: 2000 },
+    ],
+  });
+
+  await prisma.emailTemplate.create({
+    data: {
+      key: "template-01",
+      name: "Template 01",
+      description: "Default outreach template.",
+      fields: [
+        { key: "campaignName", label: "Campaign Name", required: true },
+        { key: "referenceCode", label: "Reference Code", required: false },
+        { key: "notes", label: "Notes", required: false },
+      ],
+      contentHtml: null,
+      isActive: true,
     },
   });
 }

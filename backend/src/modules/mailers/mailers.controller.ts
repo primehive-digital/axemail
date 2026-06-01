@@ -1,42 +1,42 @@
 import type { Request, Response } from "express";
 
-import { SENDER_TYPE } from "@/constants/enums";
-import { sendComposerCampaign } from "@/services/sender.service";
+import { MAILER_TYPE } from "@/constants/enums";
+import { sendComposerCampaign } from "@/services/mailer-delivery.service";
 import { asyncHandler } from "@/utils/async-handler";
-import { domainSenderSchema, gmailSenderSchema, maskSenderSchema } from "@/modules/senders/senders.schemas";
+import { domainMailerSchema, gmailMailerSchema, maskMailerSchema } from "@/modules/mailers/mailers.schemas";
 
 export const sendGmailHandler = asyncHandler(async (request: Request, response: Response) => {
-  const payload = gmailSenderSchema.parse(request.body);
+  const payload = gmailMailerSchema.parse(request.body);
   response.status(201).json({
     data: await sendComposerCampaign({
       ...payload,
       userId: request.auth!.userId,
       role: request.auth!.role,
-      senderType: SENDER_TYPE.GMAIL,
+      mailerType: MAILER_TYPE.GMAIL,
     }),
   });
 });
 
 export const sendDomainHandler = asyncHandler(async (request: Request, response: Response) => {
-  const payload = domainSenderSchema.parse(request.body);
+  const payload = domainMailerSchema.parse(request.body);
   response.status(201).json({
     data: await sendComposerCampaign({
       ...payload,
       userId: request.auth!.userId,
       role: request.auth!.role,
-      senderType: SENDER_TYPE.DOMAIN,
+      mailerType: MAILER_TYPE.DOMAIN,
     }),
   });
 });
 
 export const sendMaskHandler = asyncHandler(async (request: Request, response: Response) => {
-  const payload = maskSenderSchema.parse(request.body);
+  const payload = maskMailerSchema.parse(request.body);
   response.status(201).json({
     data: await sendComposerCampaign({
       ...payload,
       userId: request.auth!.userId,
       role: request.auth!.role,
-      senderType: SENDER_TYPE.MASK,
+      mailerType: MAILER_TYPE.MASK,
     }),
   });
 });

@@ -1,4 +1,4 @@
-import { Role, SenderType } from "@prisma/client";
+import { Role, MailerType } from "@prisma/client";
 
 import type { OverviewDto } from "@/types/api.types";
 import { buildUserUsage, getUsageByRole } from "@/services/quota.service";
@@ -9,19 +9,19 @@ export async function getOverview(input: { role: Role; userId: string }): Promis
       ? [await buildUserUsage(input.userId)]
       : await getUsageByRole();
 
-  const overall = visibleUsage.flatMap((usage) => usage.senderQuotas).reduce(
+  const overall = visibleUsage.flatMap((usage) => usage.mailerQuotas).reduce(
     (accumulator, quota) => {
-      const senderType = quota.type.toUpperCase() as SenderType;
-      accumulator[senderType].assigned += quota.assignedLimit;
-      accumulator[senderType].used += quota.used;
+      const mailerType = quota.type.toUpperCase() as MailerType;
+      accumulator[mailerType].assigned += quota.assignedLimit;
+      accumulator[mailerType].used += quota.used;
       accumulator.totalAssigned += quota.assignedLimit;
       accumulator.totalUsed += quota.used;
       return accumulator;
     },
     {
-      [SenderType.GMAIL]: { assigned: 0, used: 0 },
-      [SenderType.DOMAIN]: { assigned: 0, used: 0 },
-      [SenderType.MASK]: { assigned: 0, used: 0 },
+      [MailerType.GMAIL]: { assigned: 0, used: 0 },
+      [MailerType.DOMAIN]: { assigned: 0, used: 0 },
+      [MailerType.MASK]: { assigned: 0, used: 0 },
       totalAssigned: 0,
       totalUsed: 0,
     },
@@ -31,28 +31,28 @@ export async function getOverview(input: { role: Role; userId: string }): Promis
     overall: {
       totalDelivered: overall.totalUsed,
       totalAssigned: overall.totalAssigned,
-      senders: {
+      mailers: {
         gmail: {
-          assigned: overall[SenderType.GMAIL].assigned,
-          used: overall[SenderType.GMAIL].used,
+          assigned: overall[MailerType.GMAIL].assigned,
+          used: overall[MailerType.GMAIL].used,
           remaining: Math.max(
-            overall[SenderType.GMAIL].assigned - overall[SenderType.GMAIL].used,
+            overall[MailerType.GMAIL].assigned - overall[MailerType.GMAIL].used,
             0,
           ),
         },
         domain: {
-          assigned: overall[SenderType.DOMAIN].assigned,
-          used: overall[SenderType.DOMAIN].used,
+          assigned: overall[MailerType.DOMAIN].assigned,
+          used: overall[MailerType.DOMAIN].used,
           remaining: Math.max(
-            overall[SenderType.DOMAIN].assigned - overall[SenderType.DOMAIN].used,
+            overall[MailerType.DOMAIN].assigned - overall[MailerType.DOMAIN].used,
             0,
           ),
         },
         mask: {
-          assigned: overall[SenderType.MASK].assigned,
-          used: overall[SenderType.MASK].used,
+          assigned: overall[MailerType.MASK].assigned,
+          used: overall[MailerType.MASK].used,
           remaining: Math.max(
-            overall[SenderType.MASK].assigned - overall[SenderType.MASK].used,
+            overall[MailerType.MASK].assigned - overall[MailerType.MASK].used,
             0,
           ),
         },

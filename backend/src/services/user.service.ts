@@ -85,7 +85,7 @@ export async function updateUser(
     });
 
     if (input.role && input.role !== Role.EMPLOYEE) {
-      await transaction.userSenderAllocation.deleteMany({
+      await transaction.userMailerAllocation.deleteMany({
         where: { userId },
       });
     }

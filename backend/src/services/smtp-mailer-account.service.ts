@@ -1,16 +1,16 @@
 import nodemailer from "nodemailer";
 import {
-  SenderAccountStatus,
-  SenderHealthStatus,
-  SenderType,
+  SmtpMailerAccountStatus,
+  SmtpMailerHealthStatus,
+  MailerType,
 } from "@prisma/client";
 
 import { prisma } from "@/config/prisma";
 import { decryptJson, encryptJson } from "@/utils/crypto";
 import { AppError } from "@/utils/app-error";
-import { mapSenderType } from "@/utils/enum-mappers";
+import { mapMailerType, mapSmtpMailerAccountStatus, mapSmtpMailerHealth } from "@/utils/enum-mappers";
 
-type SenderAccountDto = {
+type SmtpMailerAccountDto = {
   id: string;
   type: "gmail" | "domain" | "mask";
   label: string;
@@ -23,46 +23,53 @@ type SenderAccountDto = {
   hasCredentials: boolean;
 };
 
-export async function getSenderAccountMetrics() {
+export async function getSmtpMailerAccountMetrics() {
   const [accounts, policies] = await Promise.all([
-    prisma.senderAccount.findMany(),
-    prisma.senderPolicy.findMany(),
+    prisma.smtpMailerAccount.findMany(),
+    prisma.mailerPolicy.findMany(),
   ]);
 
-  const gmailAccounts = accounts.filter((item) => item.type === SenderType.GMAIL);
-  const domainAccounts = accounts.filter((item) => item.type === SenderType.DOMAIN);
-  const serverAccounts = accounts.filter((item) => item.type === SenderType.MASK);
-  const maskPolicy = policies.find((item) => item.senderType === SenderType.MASK);
-  const serverDailyLimit = maskPolicy?.dailyLimit ?? defaultDailyLimit(SenderType.MASK);
+  const gmailAccounts = accounts.filter((item) => item.type === MailerType.GMAIL);
+  const domainAccounts = accounts.filter((item) => item.type === MailerType.DOMAIN);
+  const serverAccounts = accounts.filter((item) => item.type === MailerType.MASK);
+  const maskPolicy = policies.find((item) => item.mailerType === MailerType.MASK);
+  const serverDailyLimit = maskPolicy?.dailyLimit ?? defaultDailyLimit(MailerType.MASK);
   const totalServers = 1;
   const serverTotalCapacity = serverDailyLimit * totalServers;
+
+  const uniqueDomains = new Set(
+    domainAccounts
+      .map((account) => account.email.split("@")[1]?.toLowerCase())
+      .filter(Boolean),
+  );
+  const gmailDailyCapacity = gmailAccounts.reduce((total, item) => total + item.dailyLimit, 0);
+  const domainDailyCapacity = domainAccounts.reduce((total, item) => total + item.dailyLimit, 0);
 
   return {
     totalGmailAccounts: gmailAccounts.length,
     totalDomainAccounts: domainAccounts.length,
+    totalDomains: uniqueDomains.size,
+    totalMailboxes: domainAccounts.length,
     totalServers,
-    gmailDailyCapacity: gmailAccounts.reduce((total, item) => total + item.dailyLimit, 0),
-    domainDailyCapacity: domainAccounts.reduce((total, item) => total + item.dailyLimit, 0),
+    gmailDailyCapacity,
+    domainDailyCapacity,
     serverTotalCapacity,
-    totalCapacity:
-      gmailAccounts.reduce((total, item) => total + item.dailyLimit, 0) +
-      domainAccounts.reduce((total, item) => total + item.dailyLimit, 0) +
-      serverTotalCapacity,
+    totalCapacity: gmailDailyCapacity + domainDailyCapacity + serverTotalCapacity,
   };
 }
 
-export async function listSenderAccounts(): Promise<SenderAccountDto[]> {
-  const accounts = await prisma.senderAccount.findMany({
+export async function listSmtpMailerAccounts(): Promise<SmtpMailerAccountDto[]> {
+  const accounts = await prisma.smtpMailerAccount.findMany({
     orderBy: [{ type: "asc" }, { createdAt: "asc" }],
   });
 
   return accounts.map((account) => ({
     id: account.id,
-    type: mapSenderType(account.type),
+    type: mapMailerType(account.type),
     label: account.label,
     email: account.email,
-    status: account.status.toLowerCase() as "active" | "paused" | "archived",
-    healthStatus: account.healthStatus.toLowerCase() as "active" | "burned" | "banned" | "not_working",
+    status: mapSmtpMailerAccountStatus(account.status),
+    healthStatus: mapSmtpMailerHealth(account.healthStatus),
     lastHealthCheckAt: account.lastHealthCheckAt?.toISOString() ?? null,
     lastHealthMessage: account.lastHealthMessage ?? null,
     dailyLimit: account.dailyLimit,
@@ -70,40 +77,40 @@ export async function listSenderAccounts(): Promise<SenderAccountDto[]> {
   }));
 }
 
-export async function createSenderAccount(input: {
-  type: SenderType;
+export async function createSmtpMailerAccount(input: {
+  type: MailerType;
   label: string;
   email: string;
-  status: SenderAccountStatus;
-  healthStatus?: SenderHealthStatus;
+  status?: SmtpMailerAccountStatus;
+  healthStatus?: SmtpMailerHealthStatus;
   password?: string;
   appPassword?: string;
 }) {
-  const policy = await prisma.senderPolicy.findUnique({
-    where: { senderType: input.type },
+  const policy = await prisma.mailerPolicy.findUnique({
+    where: { mailerType: input.type },
   });
   const credentials = buildCredentials(input.type, input);
 
-  const account = await prisma.senderAccount.create({
+  const account = await prisma.smtpMailerAccount.create({
     data: {
       type: input.type,
       label: input.label,
       email: input.email,
       provider: inferProvider(input.type),
       dailyLimit: policy?.dailyLimit ?? defaultDailyLimit(input.type),
-      status: input.status,
-      healthStatus: input.healthStatus ?? SenderHealthStatus.ACTIVE,
+      status: input.status ?? SmtpMailerAccountStatus.ACTIVE,
+      healthStatus: input.healthStatus ?? SmtpMailerHealthStatus.ACTIVE,
       credentialsEncrypted: credentials ? encryptJson(credentials) : null,
     },
   });
 
   return {
     id: account.id,
-    type: mapSenderType(account.type),
+    type: mapMailerType(account.type),
     label: account.label,
     email: account.email,
-    status: account.status.toLowerCase() as "active" | "paused" | "archived",
-    healthStatus: account.healthStatus.toLowerCase() as "active" | "burned" | "banned" | "not_working",
+    status: mapSmtpMailerAccountStatus(account.status),
+    healthStatus: mapSmtpMailerHealth(account.healthStatus),
     lastHealthCheckAt: account.lastHealthCheckAt?.toISOString() ?? null,
     lastHealthMessage: account.lastHealthMessage ?? null,
     dailyLimit: account.dailyLimit,
@@ -111,33 +118,33 @@ export async function createSenderAccount(input: {
   };
 }
 
-export async function updateSenderAccount(
-  senderAccountId: string,
+export async function updateSmtpMailerAccount(
+  smtpMailerAccountId: string,
   input: Partial<{
     label: string;
     email: string;
-    status: SenderAccountStatus;
-    healthStatus: SenderHealthStatus;
+    status?: SmtpMailerAccountStatus;
+    healthStatus: SmtpMailerHealthStatus;
     password: string;
     appPassword: string;
   }>,
 ) {
-  const existing = await prisma.senderAccount.findUnique({
-    where: { id: senderAccountId },
+  const existing = await prisma.smtpMailerAccount.findUnique({
+    where: { id: smtpMailerAccountId },
   });
 
   if (!existing) {
-    throw new AppError("Sender account not found.", 404);
+    throw new AppError("SMTP mailer account not found.", 404);
   }
 
   const credentials = buildCredentials(existing.type, input, false);
 
-  const account = await prisma.senderAccount.update({
-    where: { id: senderAccountId },
+  const account = await prisma.smtpMailerAccount.update({
+    where: { id: smtpMailerAccountId },
     data: {
       label: input.label,
       email: input.email,
-      status: input.status,
+      status: input.status ?? SmtpMailerAccountStatus.ACTIVE,
       healthStatus: input.healthStatus,
       credentialsEncrypted: credentials
         ? encryptJson(credentials)
@@ -147,11 +154,11 @@ export async function updateSenderAccount(
 
   return {
     id: account.id,
-    type: mapSenderType(account.type),
+    type: mapMailerType(account.type),
     label: account.label,
     email: account.email,
-    status: account.status.toLowerCase() as "active" | "paused" | "archived",
-    healthStatus: account.healthStatus.toLowerCase() as "active" | "burned" | "banned" | "not_working",
+    status: mapSmtpMailerAccountStatus(account.status),
+    healthStatus: mapSmtpMailerHealth(account.healthStatus),
     lastHealthCheckAt: account.lastHealthCheckAt?.toISOString() ?? null,
     lastHealthMessage: account.lastHealthMessage ?? null,
     dailyLimit: account.dailyLimit,
@@ -159,29 +166,29 @@ export async function updateSenderAccount(
   };
 }
 
-export async function deleteSenderAccount(senderAccountId: string) {
-  const existing = await prisma.senderAccount.findUnique({
-    where: { id: senderAccountId },
+export async function deleteSmtpMailerAccount(smtpMailerAccountId: string) {
+  const existing = await prisma.smtpMailerAccount.findUnique({
+    where: { id: smtpMailerAccountId },
   });
 
   if (!existing) {
-    throw new AppError("Sender account not found.", 404);
+    throw new AppError("SMTP mailer account not found.", 404);
   }
 
-  await prisma.senderAccount.delete({ where: { id: senderAccountId } });
+  await prisma.smtpMailerAccount.delete({ where: { id: smtpMailerAccountId } });
   return { deleted: true };
 }
 
-export async function testSenderAccount(senderAccountId: string) {
-  const account = await prisma.senderAccount.findUnique({
-    where: { id: senderAccountId },
+export async function testSmtpMailerAccount(smtpMailerAccountId: string) {
+  const account = await prisma.smtpMailerAccount.findUnique({
+    where: { id: smtpMailerAccountId },
   });
 
   if (!account) {
-    throw new AppError("Sender account not found.", 404);
+    throw new AppError("SMTP mailer account not found.", 404);
   }
 
-  if (account.type === SenderType.MASK) {
+  if (account.type === MailerType.MASK) {
     throw new AppError("Use mask server health endpoint for mask infrastructure.", 400);
   }
 
@@ -194,7 +201,7 @@ export async function testSenderAccount(senderAccountId: string) {
   }
 
   const transporter = nodemailer.createTransport(
-    account.type === SenderType.GMAIL
+    account.type === MailerType.GMAIL
       ? {
           service: "gmail",
           auth: {
@@ -216,10 +223,10 @@ export async function testSenderAccount(senderAccountId: string) {
   try {
     await transporter.verify();
 
-    const updated = await prisma.senderAccount.update({
-      where: { id: senderAccountId },
+    const updated = await prisma.smtpMailerAccount.update({
+      where: { id: smtpMailerAccountId },
       data: {
-        healthStatus: SenderHealthStatus.ACTIVE,
+        healthStatus: SmtpMailerHealthStatus.ACTIVE,
         lastHealthCheckAt: new Date(),
         lastHealthMessage: "Connection verified successfully.",
       },
@@ -235,10 +242,10 @@ export async function testSenderAccount(senderAccountId: string) {
     const message =
       error instanceof Error ? error.message : "Connection verification failed.";
 
-    const updated = await prisma.senderAccount.update({
-      where: { id: senderAccountId },
+    const updated = await prisma.smtpMailerAccount.update({
+      where: { id: smtpMailerAccountId },
       data: {
-        healthStatus: SenderHealthStatus.NOT_WORKING,
+        healthStatus: SmtpMailerHealthStatus.NOT_WORKING,
         lastHealthCheckAt: new Date(),
         lastHealthMessage: message,
       },
@@ -254,14 +261,14 @@ export async function testSenderAccount(senderAccountId: string) {
 }
 
 function buildCredentials(
-  senderType: SenderType,
+  mailerType: MailerType,
   input: {
     password?: string;
     appPassword?: string;
   },
   requireForCreate = true,
 ) {
-  if (senderType === SenderType.GMAIL) {
+  if (mailerType === MailerType.GMAIL) {
     if (input.appPassword || input.password) {
       return { appPassword: input.appPassword ?? input.password ?? "" };
     }
@@ -271,7 +278,7 @@ function buildCredentials(
     return null;
   }
 
-  if (senderType === SenderType.DOMAIN) {
+  if (mailerType === MailerType.DOMAIN) {
     if (input.password) {
       return { password: input.password };
     }
@@ -284,14 +291,14 @@ function buildCredentials(
   return null;
 }
 
-function inferProvider(senderType: SenderType) {
-  if (senderType === SenderType.GMAIL) return "gmail";
-  if (senderType === SenderType.DOMAIN) return "zoho";
+function inferProvider(mailerType: MailerType) {
+  if (mailerType === MailerType.GMAIL) return "gmail";
+  if (mailerType === MailerType.DOMAIN) return "zoho";
   return "mask-vps";
 }
 
-function defaultDailyLimit(senderType: SenderType) {
-  if (senderType === SenderType.GMAIL) return 150;
-  if (senderType === SenderType.DOMAIN) return 200;
+function defaultDailyLimit(mailerType: MailerType) {
+  if (mailerType === MailerType.GMAIL) return 150;
+  if (mailerType === MailerType.DOMAIN) return 200;
   return 2000;
 }

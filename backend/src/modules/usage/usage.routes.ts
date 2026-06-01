@@ -1,10 +1,11 @@
+import { Role } from "@prisma/client";
 import { Router } from "express";
 
 import {
   assignLimitsHandler,
   getOverviewHandler,
-  getSenderAvailabilityHandler,
-  getSenderCardsHandler,
+  getMailerAvailabilityHandler,
+  getMailerCardsHandler,
   getUsageHandler,
 } from "@/modules/usage/usage.controller";
 import { requireAuthenticatedUser, requireRoles } from "@/middleware/auth";
@@ -12,8 +13,8 @@ import { requireAuthenticatedUser, requireRoles } from "@/middleware/auth";
 export const usageRouter = Router();
 
 usageRouter.get("/usage", requireAuthenticatedUser, getUsageHandler);
-usageRouter.post("/limits/assign", requireRoles("ADMIN", "MANAGER"), assignLimitsHandler);
-usageRouter.patch("/limits/:userId", requireRoles("ADMIN", "MANAGER"), assignLimitsHandler);
-usageRouter.get("/sender-cards", requireRoles("EMPLOYEE"), getSenderCardsHandler);
+usageRouter.post("/limits/assign", requireRoles(Role.ADMIN, Role.MANAGER), assignLimitsHandler);
+usageRouter.patch("/limits/:userId", requireRoles(Role.ADMIN, Role.MANAGER), assignLimitsHandler);
+usageRouter.get("/mailer-cards", requireRoles(Role.EMPLOYEE), getMailerCardsHandler);
 usageRouter.get("/overview", requireAuthenticatedUser, getOverviewHandler);
-usageRouter.get("/sender-availability/:senderType", requireRoles("EMPLOYEE"), getSenderAvailabilityHandler);
+usageRouter.get("/mailer-availability/:mailerType", requireRoles(Role.EMPLOYEE), getMailerAvailabilityHandler);

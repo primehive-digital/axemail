@@ -1,9 +1,8 @@
 import crypto from "node:crypto";
 import jwt, { type Secret, type SignOptions } from "jsonwebtoken";
-import { UserStatus } from "@prisma/client";
+import { Role, UserStatus } from "@prisma/client";
 
 import { env } from "@/config/env";
-import { ROLE } from "@/constants/enums";
 import { prisma } from "@/config/prisma";
 import { AppError } from "@/utils/app-error";
 import { hashOpaqueToken, hashPassword, needsPasswordRehash, verifyPassword } from "@/utils/password";
@@ -11,7 +10,7 @@ import { mapRole, mapUserStatus } from "@/utils/enum-mappers";
 
 type AuthTokenPayload = {
   sub: string;
-  role: (typeof ROLE)[keyof typeof ROLE];
+  role: Role;
   email: string;
   type: "access" | "refresh";
   sid: string;
@@ -32,6 +31,10 @@ export async function login(input: {
   const user = await prisma.user.findUnique({
     where: { email: input.email.toLowerCase() },
   });
+
+  if (user?.status === UserStatus.NOT_ACTIVE) {
+    throw new AppError("User account is not active.", 403);
+  }
 
   if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
     throw new AppError("Invalid email or password.", 401);
@@ -152,7 +155,7 @@ export function readAccessToken(token: string) {
 
 async function buildAuthSession(input: {
   userId: string;
-  role: (typeof ROLE)[keyof typeof ROLE];
+  role: Role;
   email: string;
   firstName: string;
   lastName: string;

@@ -1,9 +1,9 @@
-import type { SenderType } from "@/constants/enums";
+import type { MailerType } from "@/constants/enums";
 
-export type SenderComposerPayload = {
+export type MailerComposerPayload = {
   userId?: string;
   role?: string;
-  senderType: SenderType;
+  mailerType: MailerType;
   fromName: string;
   fromEmail?: string;
   to: string;
@@ -24,9 +24,9 @@ export type SenderComposerPayload = {
 
 export type ProviderDispatchPayload = {
   provider: string;
-  senderAccountId: string;
-  senderEmail: string;
-  senderName: string;
+  smtpMailerAccountId: string;
+  fromEmail: string;
+  fromName: string;
   to: string;
   cc: string[];
   bcc: string[];

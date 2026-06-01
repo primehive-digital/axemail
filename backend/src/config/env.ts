@@ -3,6 +3,13 @@ import { z } from "zod";
 
 config();
 
+const rawEnv = {
+  ...process.env,
+  MASK_MAILER_API_URL: process.env.MASK_MAILER_API_URL || process.env.MASK_SENDER_API_URL,
+  MASK_MAILER_HEALTHCHECK_URL: process.env.MASK_MAILER_HEALTHCHECK_URL || process.env.MASK_SENDER_HEALTHCHECK_URL,
+  MASK_MAILER_API_KEY: process.env.MASK_MAILER_API_KEY || process.env.MASK_SENDER_API_KEY,
+};
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(8080),
@@ -13,15 +20,15 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default("8h"),
   SESSION_RETENTION_DAYS: z.coerce.number().int().min(1).max(7).default(3),
   RATE_LIMIT_WINDOW: z.coerce.number().int().positive().default(100),
-  MASK_SENDER_API_URL: z.string().url().default("https://api.usptofeefilings.org/send"),
-  MASK_SENDER_HEALTHCHECK_URL: z.string().url().optional(),
-  MASK_SENDER_API_KEY: z.string().default(""),
+  MASK_MAILER_API_URL: z.string().url().default("https://api.usptofeefilings.org/send"),
+  MASK_MAILER_HEALTHCHECK_URL: z.string().url().optional(),
+  MASK_MAILER_API_KEY: z.string().default(""),
   ENCRYPTION_KEY: z.string().length(64),
   GMAIL_COOLDOWN_SECONDS: z.string().default("20,35,50,70,90"),
   DOMAIN_COOLDOWN_SECONDS: z.string().default("20,35,50,70,90"),
 });
 
-const parsed = envSchema.safeParse(process.env);
+const parsed = envSchema.safeParse(rawEnv);
 
 if (!parsed.success) {
   console.error(parsed.error.flatten().fieldErrors);
@@ -30,9 +37,9 @@ if (!parsed.success) {
 
 export const env = {
   ...parsed.data,
-  MASK_SENDER_HEALTHCHECK_URL:
-    parsed.data.MASK_SENDER_HEALTHCHECK_URL ??
-    new URL("/health", parsed.data.MASK_SENDER_API_URL).toString(),
+  MASK_MAILER_HEALTHCHECK_URL:
+    parsed.data.MASK_MAILER_HEALTHCHECK_URL ??
+    new URL("/health", parsed.data.MASK_MAILER_API_URL).toString(),
   GMAIL_COOLDOWN_SCHEDULE: parsed.data.GMAIL_COOLDOWN_SECONDS.split(",")
     .map((value) => Number(value.trim()))
     .filter((value) => Number.isFinite(value) && value > 0),

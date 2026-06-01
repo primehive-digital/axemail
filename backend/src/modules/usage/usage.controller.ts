@@ -2,9 +2,9 @@ import type { Request, Response } from "express";
 import { Role } from "@prisma/client";
 
 import { getOverview } from "@/services/analytics.service";
-import { assignUserLimits, buildUserUsage, getSenderAvailability, getUsageByRole } from "@/services/quota.service";
+import { assignUserLimits, buildUserUsage, getMailerAvailability, getUsageByRole } from "@/services/quota.service";
 import { asyncHandler } from "@/utils/async-handler";
-import { assignLimitsSchema } from "@/modules/usage/usage.schemas";
+import { assignLimitsSchema, mailerTypeParamSchema } from "@/modules/usage/usage.schemas";
 
 export const getUsageHandler = asyncHandler(async (request: Request, response: Response) => {
   if (request.auth!.role === Role.EMPLOYEE) {
@@ -27,8 +27,8 @@ export const assignLimitsHandler = asyncHandler(async (request: Request, respons
   });
 });
 
-export const getSenderCardsHandler = asyncHandler(async (request: Request, response: Response) => {
-  response.json({ data: (await buildUserUsage(request.auth!.userId)).senderQuotas });
+export const getMailerCardsHandler = asyncHandler(async (request: Request, response: Response) => {
+  response.json({ data: (await buildUserUsage(request.auth!.userId)).mailerQuotas });
 });
 
 export const getOverviewHandler = asyncHandler(async (request: Request, response: Response) => {
@@ -40,7 +40,7 @@ export const getOverviewHandler = asyncHandler(async (request: Request, response
   });
 });
 
-export const getSenderAvailabilityHandler = asyncHandler(async (request: Request, response: Response) => {
-  const senderType = String(request.params.senderType).toUpperCase() as "GMAIL" | "DOMAIN" | "MASK";
-  response.json({ data: await getSenderAvailability({ senderType, userId: request.auth!.userId }) });
+export const getMailerAvailabilityHandler = asyncHandler(async (request: Request, response: Response) => {
+  const { mailerType } = mailerTypeParamSchema.parse(request.params);
+  response.json({ data: await getMailerAvailability({ mailerType, userId: request.auth!.userId }) });
 });

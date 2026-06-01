@@ -1,7 +1,7 @@
+import { Role } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 
 import { prisma } from "@/config/prisma";
-import { ROLE } from "@/constants/enums";
 import { readAccessToken } from "@/services/auth.service";
 import { AppError } from "@/utils/app-error";
 
@@ -30,7 +30,7 @@ export function requireAuthenticatedUser(request: Request, _response: Response, 
     .catch((error) => next(error));
 }
 
-export function requireRoles(...roles: Array<(typeof ROLE)[keyof typeof ROLE]>) {
+export function requireRoles(...roles: Role[]) {
   return (request: Request, _response: Response, next: NextFunction) => {
     void ensureAuthenticatedSession(request)
       .then(() => {

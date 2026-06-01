@@ -17,23 +17,29 @@ enum UserStatus {
   NOT_ACTIVE
 }
 
-enum SenderType {
+enum MailerType {
   GMAIL
   DOMAIN
   MASK
+
+  @@map("SenderType")
 }
 
-enum SenderAccountStatus {
+enum SmtpMailerAccountStatus {
   ACTIVE
   PAUSED
   ARCHIVED
+
+  @@map("SenderAccountStatus")
 }
 
-enum SenderHealthStatus {
+enum SmtpMailerHealthStatus {
   ACTIVE
   BURNED
   BANNED
   NOT_WORKING
+
+  @@map("SenderHealthStatus")
 }
 
 enum DeliveryStatus {
@@ -43,19 +49,19 @@ enum DeliveryStatus {
 }
 
 model User {
-  id          String                 @id @default(cuid())
-  firstName   String
-  lastName    String
-  pseudoName  String
-  email       String                 @unique
+  id           String                 @id @default(cuid())
+  firstName    String
+  lastName     String
+  pseudoName   String
+  email        String                 @unique
   passwordHash String
-  role        Role
-  status      UserStatus             @default(ACTIVE)
-  createdAt   DateTime               @default(now())
-  updatedAt   DateTime               @updatedAt
-  allocations UserSenderAllocation[]
-  deliveries  DeliveryRecord[]
-  sessions    UserSession[]
+  role         Role
+  status       UserStatus             @default(ACTIVE)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  allocations  UserMailerAllocation[]
+  deliveries   DeliveryRecord[]
+  sessions     UserSession[]
 }
 
 model UserSession {
@@ -75,65 +81,80 @@ model UserSession {
   @@index([userId])
 }
 
-model SenderAccount {
-  id                   String               @id @default(cuid())
-  type                 SenderType
+model SmtpMailerAccount {
+  id                   String                  @id @default(cuid())
+  type                 MailerType
   label                String
   email                String
   provider             String
-  status               SenderAccountStatus  @default(ACTIVE)
-  healthStatus         SenderHealthStatus   @default(ACTIVE)
+  status               SmtpMailerAccountStatus @default(ACTIVE)
+  healthStatus         SmtpMailerHealthStatus  @default(ACTIVE)
   lastHealthCheckAt    DateTime?
   lastHealthMessage    String?
   dailyLimit           Int
   encryptionKeyHint    String?
   credentialsEncrypted String?
   metadata             Json?
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
   deliveries           DeliveryRecord[]
 
   @@unique([type, email])
+  @@map("SenderAccount")
 }
 
-model SenderPolicy {
+model MailerPolicy {
   id         String     @id @default(cuid())
-  senderType SenderType @unique
+  mailerType MailerType @unique @map("senderType")
   dailyLimit Int
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
+
+  @@map("SenderPolicy")
 }
 
-model UserSenderAllocation {
+model UserMailerAllocation {
   id            String     @id @default(cuid())
   userId        String
-  senderType    SenderType
+  mailerType    MailerType @map("senderType")
   assignedLimit Int
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, senderType])
+  @@unique([userId, mailerType])
+  @@map("UserSenderAllocation")
 }
 
 model DeliveryRecord {
-  id                String          @id @default(cuid())
-  deliveryId        String
-  userId            String
-  senderType        SenderType
-  senderAccountId   String?
-  recipientEmail    String
-  status            DeliveryStatus  @default(QUEUED)
-  providerMessageId String?
-  messageIdHeader   String?
-  errorMessage      String?
-  sentAt            DateTime?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  senderAccount     SenderAccount?  @relation(fields: [senderAccountId], references: [id], onDelete: SetNull)
+  id                  String             @id @default(cuid())
+  deliveryId          String
+  userId              String
+  mailerType          MailerType         @map("senderType")
+  smtpMailerAccountId String?            @map("senderAccountId")
+  recipientEmail      String
+  status              DeliveryStatus     @default(QUEUED)
+  providerMessageId   String?
+  messageIdHeader     String?
+  errorMessage        String?
+  sentAt              DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  smtpMailerAccount   SmtpMailerAccount? @relation(fields: [smtpMailerAccountId], references: [id], onDelete: SetNull)
 
   @@index([deliveryId])
-  @@index([userId, senderType, createdAt])
-  @@index([senderAccountId, createdAt])
+  @@index([userId, mailerType, createdAt])
+  @@index([smtpMailerAccountId, createdAt])
+}
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  fields      Json
+  contentHtml String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

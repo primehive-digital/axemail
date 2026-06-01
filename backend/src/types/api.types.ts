@@ -1,4 +1,4 @@
-import type { Role, SenderType, UserStatus } from "@/constants/enums";
+import type { MailerType, UserRole, UserStatus } from "@/constants/enums";
 
 export type ApiResponse<T> = {
   data: T;
@@ -10,7 +10,7 @@ export type UserRecordDto = {
   lastName: string;
   pseudoName: string;
   email: string;
-  role: Role;
+  role: UserRole;
   status: UserStatus;
 };
 
@@ -21,9 +21,9 @@ export type ProfileDto = {
   email: string;
 };
 
-export type SenderQuotaDto = {
+export type MailerQuotaDto = {
   id: string;
-  type: SenderType;
+  type: MailerType;
   label: string;
   totalLimit: number;
   assignedLimit: number;
@@ -33,10 +33,10 @@ export type SenderQuotaDto = {
 
 export type UserUsageDto = {
   userId: string;
-  senderQuotas: SenderQuotaDto[];
+  mailerQuotas: MailerQuotaDto[];
 };
 
-export type SenderAnalyticsDto = {
+export type MailerAnalyticsDto = {
   assigned: number;
   used: number;
   remaining: number;
@@ -46,7 +46,7 @@ export type OverviewDto = {
   overall: {
     totalDelivered: number;
     totalAssigned: number;
-    senders: Record<SenderType, SenderAnalyticsDto>;
+    mailers: Record<MailerType, MailerAnalyticsDto>;
   };
 };
 
@@ -74,8 +74,8 @@ export type PerformanceReportEmployeeDto = {
   completionRate: number;
   isTargetMet: boolean;
   inactiveDays: number;
-  senderTargets: Record<SenderType, number>;
-  senderTotals: Record<SenderType, number>;
+  mailerTargets: Record<MailerType, number>;
+  mailerTotals: Record<MailerType, number>;
   daily: PerformanceReportDailyDto[];
 };
 

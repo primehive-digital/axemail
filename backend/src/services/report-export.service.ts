@@ -11,9 +11,9 @@ export function buildPerformanceReportExcel(report: PerformanceReportDto) {
       employee.remainingTarget,
       `${employee.completionRate}%`,
       employee.isTargetMet ? "Target met" : "Behind",
-      employee.senderTotals.gmail,
-      employee.senderTotals.domain,
-      employee.senderTotals.mask,
+      employee.mailerTotals.gmail,
+      employee.mailerTotals.domain,
+      employee.mailerTotals.mask,
     ]),
     [],
     ["Daily Activity"],
@@ -57,7 +57,7 @@ function employeePdfLines(employee: PerformanceReportEmployeeDto) {
   return [
     `${employee.name} <${employee.email}>`,
     `Target ${employee.monthTarget} | Sent ${employee.totalSent} | Remaining ${employee.remainingTarget} | Completion ${employee.completionRate}% | ${employee.isTargetMet ? "Target met" : "Behind"}`,
-    `Gmail ${employee.senderTotals.gmail} | Domain ${employee.senderTotals.domain} | Mask ${employee.senderTotals.mask}`,
+    `Gmail ${employee.mailerTotals.gmail} | Domain ${employee.mailerTotals.domain} | Mask ${employee.mailerTotals.mask}`,
     ...employee.daily
       .filter((day) => day.total > 0)
       .map((day) => `${day.date}: total ${day.total}, gmail ${day.gmail}, domain ${day.domain}, mask ${day.mask}`),

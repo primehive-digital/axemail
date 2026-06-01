@@ -1,13 +1,13 @@
 import axios from "axios";
 import nodemailer from "nodemailer";
-import { SenderType } from "@prisma/client";
+import { MailerType } from "@prisma/client";
 
 import { env } from "@/config/env";
 import { decryptJson } from "@/utils/crypto";
-import type { ProviderDispatchPayload } from "@/types/sender.types";
+import type { ProviderDispatchPayload } from "@/types/mailer.types";
 
 export async function dispatchMessage(
-  senderType: SenderType,
+  mailerType: MailerType,
   account: {
     email: string;
     provider: string;
@@ -16,10 +16,10 @@ export async function dispatchMessage(
   },
   payload: ProviderDispatchPayload,
 ) {
-  if (senderType === SenderType.MASK) {
+  if (mailerType === MailerType.MASK) {
     const formData = new FormData();
-    formData.append("from", payload.senderEmail);
-    formData.append("fromName", payload.senderName);
+    formData.append("from", payload.fromEmail);
+    formData.append("fromName", payload.fromName);
     formData.append("to", payload.to);
     formData.append("subject", payload.subject);
     formData.append("html", payload.html);
@@ -44,11 +44,11 @@ export async function dispatchMessage(
     }
 
     const response = await axios.post(
-      env.MASK_SENDER_API_URL,
+      env.MASK_MAILER_API_URL,
       formData,
       {
-        headers: env.MASK_SENDER_API_KEY
-          ? { Authorization: `Bearer ${env.MASK_SENDER_API_KEY}` }
+        headers: env.MASK_MAILER_API_KEY
+          ? { Authorization: `Bearer ${env.MASK_MAILER_API_KEY}` }
           : undefined,
         timeout: 30000,
       },
@@ -66,7 +66,7 @@ export async function dispatchMessage(
   );
 
   const transporter = nodemailer.createTransport(
-    senderType === SenderType.GMAIL
+    mailerType === MailerType.GMAIL
       ? {
           service: "gmail",
           auth: {
@@ -86,7 +86,7 @@ export async function dispatchMessage(
   );
 
   const result = await transporter.sendMail({
-    from: `"${payload.senderName}" <${payload.senderEmail}>`,
+    from: `"${payload.fromName}" <${payload.fromEmail}>`,
     to: payload.to,
     cc: payload.cc.length ? payload.cc.join(", ") : undefined,
     bcc: payload.bcc.length ? payload.bcc.join(", ") : undefined,

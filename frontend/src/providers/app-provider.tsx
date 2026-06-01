@@ -1,25 +1,29 @@
-"use client";
+﻿"use client";
 
 import type { ReactNode } from "react";
 import { Toaster } from "react-hot-toast";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryProvider } from "@/providers/query-provider";
+import { ReduxProvider } from "@/providers/redux-provider";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <TooltipProvider>
-      <Toaster
-        position="top-right"
-        gutter={10}
-        reverseOrder={false}
-        containerStyle={{
-          top: 20,
-          right: 20,
-        }}
-        toastOptions={{
-          duration: 3500,
+    <ReduxProvider>
+      <QueryProvider>
+        <TooltipProvider>
+          <Toaster
+            position="top-right"
+            gutter={10}
+            reverseOrder={false}
+            containerStyle={{
+              top: 20,
+              right: 20,
+            }}
+            toastOptions={{
+              duration: 3500,
 
-          className: `
+              className: `
             !bg-black
             !text-slate-50
             !rounded-[18px]
@@ -35,37 +39,39 @@ export function AppProviders({ children }: { children: ReactNode }) {
             !items-center
           `,
 
-          style: {
-            boxShadow: `
+              style: {
+                boxShadow: `
               0 20px 60px rgba(0,0,0,.45),
               inset 0 1px 0 rgba(255,255,255,.03)
             `,
-          },
+              },
 
-          success: {
-            iconTheme: {
-              primary: "#22c55e",
-              secondary: "#000",
-            },
-          },
+              success: {
+                iconTheme: {
+                  primary: "#22c55e",
+                  secondary: "#000",
+                },
+              },
 
-          error: {
-            iconTheme: {
-              primary: "#ef4444",
-              secondary: "#000",
-            },
-          },
+              error: {
+                iconTheme: {
+                  primary: "#ef4444",
+                  secondary: "#000",
+                },
+              },
 
-          loading: {
-            iconTheme: {
-              primary: "#3b82f6",
-              secondary: "#000",
-            },
-          },
-        }}
-      />
+              loading: {
+                iconTheme: {
+                  primary: "#3b82f6",
+                  secondary: "#000",
+                },
+              },
+            }}
+          />
 
-      {children}
-    </TooltipProvider>
+          {children}
+        </TooltipProvider>
+      </QueryProvider>
+    </ReduxProvider>
   );
 }
