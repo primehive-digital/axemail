@@ -25,7 +25,7 @@ export function MailerCapacityCard({
   return (
     <Card
       className={cn(
-        "rounded-xl border-2 border-border bg-card py-0 shadow-sm shadow-black/5 ring-0",
+        "rounded-xl border border-border bg-card py-0 shadow-sm shadow-black/5 ring-0",
         className
       )}
     >
@@ -61,7 +61,7 @@ export function MailerCapacityCard({
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border-2 border-border bg-secondary p-4">
+          <div className="rounded-xl border border-border bg-secondary p-4">
             <p className="font-inter text-xs font-medium text-muted-foreground">
               Sent
             </p>
@@ -69,7 +69,7 @@ export function MailerCapacityCard({
               {sent}
             </p>
           </div>
-          <div className="rounded-xl border-2 border-border bg-secondary p-4">
+          <div className="rounded-xl border border-border bg-secondary p-4">
             <p className="font-inter text-xs font-medium text-muted-foreground">
               Remaining
             </p>

@@ -21,7 +21,7 @@ export function MailerProgressCard({
     target > 0 ? Math.min(Math.round((sent / target) * 100), 100) : 0;
 
   return (
-    <Card className="rounded-xl border-2 border-border bg-card py-0 shadow-sm shadow-black/5 ring-0">
+    <Card className="rounded-xl border border-border bg-card py-0 shadow-sm shadow-black/5 ring-0">
       <CardContent className="flex min-h-52 flex-col justify-between gap-6 p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
@@ -62,7 +62,7 @@ export function MailerProgressCard({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border-2 border-border bg-secondary p-4">
+            <div className="rounded-xl border border-border bg-secondary p-4">
               <p className="font-inter text-xs font-medium text-muted-foreground">
                 Sent
               </p>
@@ -70,7 +70,7 @@ export function MailerProgressCard({
                 {sent.toLocaleString()}
               </p>
             </div>
-            <div className="rounded-xl border-2 border-border bg-secondary p-4">
+            <div className="rounded-xl border border-border bg-secondary p-4">
               <p className="font-inter text-xs font-medium text-muted-foreground">
                 Target
               </p>

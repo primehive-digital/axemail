@@ -108,8 +108,8 @@ export function ProgressTrackerTableCard() {
   }, [page]);
 
   return (
-    <Card className="gap-0 rounded-xl border-2 border-border bg-card py-0 shadow-sm shadow-black/5 ring-0">
-      <CardHeader className="border-b-2 px-5 py-4 pt-6">
+    <Card className="gap-0 rounded-xl border border-border bg-card py-0 shadow-sm shadow-black/5 ring-0">
+      <CardHeader className="border-b px-5 py-4 pt-6">
         <div>
           <h2 className="font-google-sans text-xl font-semibold text-heading">
             Progress Tracker
@@ -125,7 +125,7 @@ export function ProgressTrackerTableCard() {
         <div className="min-h-97.5 overflow-x-auto">
           <table className="w-full min-w-200 border-collapse">
             <thead>
-              <tr className="border-b-2 border-border bg-secondary/60">
+              <tr className="border-b border-border bg-secondary/60">
                 <th className="px-5 py-4 text-left font-google-sans text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   User
                 </th>
@@ -154,7 +154,7 @@ export function ProgressTrackerTableCard() {
                 return (
                   <tr
                     key={user.email}
-                    className="border-b-2 border-border transition-colors last:border-b-0 hover:bg-secondary/40"
+                    className="border-b border-border transition-colors last:border-b-0 hover:bg-secondary/40"
                   >
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
@@ -203,7 +203,7 @@ export function ProgressTrackerTableCard() {
           </table>
         </div>
 
-        <div className="flex justify-end border-t-2 border-border px-5 py-4">
+        <div className="flex justify-end border-t border-border px-5 py-4">
           <div className="flex items-center gap-2">
             <Button
               type="button"

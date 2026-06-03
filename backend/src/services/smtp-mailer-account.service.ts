@@ -121,6 +121,7 @@ export async function createSmtpMailerAccount(input: {
 export async function updateSmtpMailerAccount(
   smtpMailerAccountId: string,
   input: Partial<{
+    type: MailerType;
     label: string;
     email: string;
     status?: SmtpMailerAccountStatus;
@@ -137,14 +138,29 @@ export async function updateSmtpMailerAccount(
     throw new AppError("SMTP mailer account not found.", 404);
   }
 
-  const credentials = buildCredentials(existing.type, input, false);
+  const nextType = input.type ?? existing.type;
+  const isTypeChanging = Boolean(input.type && input.type !== existing.type);
+
+  if (isTypeChanging && !input.password && !input.appPassword) {
+    throw new AppError("Password is required when changing SMTP account type.", 400);
+  }
+
+  const [credentials, policy] = await Promise.all([
+    Promise.resolve(buildCredentials(nextType, input, false)),
+    input.type
+      ? prisma.mailerPolicy.findUnique({ where: { mailerType: input.type } })
+      : Promise.resolve(null),
+  ]);
 
   const account = await prisma.smtpMailerAccount.update({
     where: { id: smtpMailerAccountId },
     data: {
+      type: input.type,
+      provider: input.type ? inferProvider(input.type) : undefined,
+      dailyLimit: input.type ? policy?.dailyLimit ?? defaultDailyLimit(input.type) : undefined,
       label: input.label,
       email: input.email,
-      status: input.status ?? SmtpMailerAccountStatus.ACTIVE,
+      status: input.status,
       healthStatus: input.healthStatus,
       credentialsEncrypted: credentials
         ? encryptJson(credentials)
@@ -197,7 +213,10 @@ export async function testSmtpMailerAccount(smtpMailerAccountId: string) {
   );
 
   if (!credentials) {
-    throw new AppError("Account credentials are not configured.", 400);
+    return markSmtpMailerAccountNotWorking(
+      smtpMailerAccountId,
+      "Account credentials are not configured.",
+    );
   }
 
   const transporter = nodemailer.createTransport(
@@ -239,27 +258,56 @@ export async function testSmtpMailerAccount(smtpMailerAccountId: string) {
       lastHealthMessage: updated.lastHealthMessage,
     };
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Connection verification failed.";
+    const message = sanitizeSmtpHealthMessage(
+      error instanceof Error ? error.message : "Connection verification failed.",
+    );
 
-    const updated = await prisma.smtpMailerAccount.update({
-      where: { id: smtpMailerAccountId },
-      data: {
-        healthStatus: SmtpMailerHealthStatus.NOT_WORKING,
-        lastHealthCheckAt: new Date(),
-        lastHealthMessage: message,
-      },
-    });
-
-    return {
-      id: updated.id,
-      healthStatus: "not_working" as const,
-      lastHealthCheckAt: updated.lastHealthCheckAt?.toISOString() ?? null,
-      lastHealthMessage: updated.lastHealthMessage,
-    };
+    return markSmtpMailerAccountNotWorking(smtpMailerAccountId, message);
   }
 }
 
+function sanitizeSmtpHealthMessage(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("535") || normalized.includes("badcredentials") || normalized.includes("username and password not accepted") || normalized.includes("invalid login")) {
+    return "Authentication failed. Check SMTP email and app password.";
+  }
+
+  if (normalized.includes("timeout") || normalized.includes("timed out") || normalized.includes("etimedout")) {
+    return "Connection timed out. Check SMTP host, port, and network access.";
+  }
+
+  if (normalized.includes("econnrefused") || normalized.includes("connection refused")) {
+    return "Connection refused. Check SMTP host and port.";
+  }
+
+  if (normalized.includes("certificate") || normalized.includes("tls") || normalized.includes("ssl")) {
+    return "TLS verification failed. Check SMTP security settings.";
+  }
+
+  return "Connection verification failed.";
+}
+
+async function markSmtpMailerAccountNotWorking(
+  smtpMailerAccountId: string,
+  message: string,
+) {
+  const updated = await prisma.smtpMailerAccount.update({
+    where: { id: smtpMailerAccountId },
+    data: {
+      healthStatus: SmtpMailerHealthStatus.NOT_WORKING,
+      lastHealthCheckAt: new Date(),
+      lastHealthMessage: message,
+    },
+  });
+
+  return {
+    id: updated.id,
+    healthStatus: "not_working" as const,
+    lastHealthCheckAt: updated.lastHealthCheckAt?.toISOString() ?? null,
+    lastHealthMessage: updated.lastHealthMessage,
+  };
+}
 function buildCredentials(
   mailerType: MailerType,
   input: {

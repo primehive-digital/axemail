@@ -38,7 +38,7 @@ export function MetricCard({
   return (
     <Card
       className={cn(
-        "rounded-xl border-2 border-border bg-card py-0 shadow-sm shadow-black/5 ring-0",
+        "rounded-xl border border-border bg-card py-0 shadow-sm shadow-black/5 ring-0",
         className,
       )}
     >
@@ -55,7 +55,7 @@ export function MetricCard({
           </div>
           <span
             className={cn(
-              "rounded-full border-2 px-2.5 py-1 font-inter text-xs font-medium",
+              "rounded-full border px-2.5 py-1 font-inter text-xs font-medium",
               badgeTone
                 ? badgeToneClassName[badgeTone]
                 : "border-[#00a664] bg-[#00a664]/20 text-[#00a664]",

@@ -150,8 +150,8 @@ export function EmployeePerformanceTableCard() {
   }, [page]);
 
   return (
-    <Card className="gap-0 rounded-xl border-2 border-border bg-card py-0 shadow-sm shadow-black/5 ring-0">
-      <CardHeader className="border-b-2 px-5 py-4 pt-6">
+    <Card className="gap-0 rounded-xl border border-border bg-card py-0 shadow-sm shadow-black/5 ring-0">
+      <CardHeader className="border-b px-5 py-4 pt-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h2 className="font-google-sans text-xl font-semibold text-heading">
@@ -210,7 +210,7 @@ export function EmployeePerformanceTableCard() {
         <div className="min-h-97.5 overflow-x-auto">
           <table className="w-full min-w-250 border-collapse">
             <thead>
-              <tr className="border-b-2 border-border bg-secondary/60">
+              <tr className="border-b border-border bg-secondary/60">
                 <th className="px-5 py-4 text-left font-google-sans text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Employee
                 </th>
@@ -251,11 +251,11 @@ export function EmployeePerformanceTableCard() {
                 return (
                   <tr
                     key={employee.email}
-                    className="border-b-2 border-border transition-colors last:border-b-0 hover:bg-secondary/40"
+                    className="border-b border-border transition-colors last:border-b-0 hover:bg-secondary/40"
                   >
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <span className="grid size-10 shrink-0 place-items-center rounded-full border-2 border-border bg-secondary text-heading">
+                        <span className="grid size-10 shrink-0 place-items-center rounded-full border border-border bg-secondary text-heading">
                           <UserRound className="size-4" />
                         </span>
                         <div className="flex min-w-0 flex-col">
@@ -308,7 +308,7 @@ export function EmployeePerformanceTableCard() {
           </table>
         </div>
 
-        <div className="flex justify-end border-t-2 border-border px-5 py-4">
+        <div className="flex justify-end border-t border-border px-5 py-4">
           <div className="flex items-center gap-2">
             <Button
               type="button"

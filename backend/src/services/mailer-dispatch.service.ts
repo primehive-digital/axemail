@@ -47,9 +47,6 @@ export async function dispatchMessage(
       env.MASK_MAILER_API_URL,
       formData,
       {
-        headers: env.MASK_MAILER_API_KEY
-          ? { Authorization: `Bearer ${env.MASK_MAILER_API_KEY}` }
-          : undefined,
         timeout: 30000,
       },
     );

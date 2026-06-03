@@ -28,13 +28,12 @@ import { getDashboardNavigationTitle } from "@/constants/dashboard-navigation";
 import { useDashboardSidebar } from "@/hooks/use-dashboard-sidebar";
 import { cn } from "@/lib/utils";
 import { LogOut, Settings } from "lucide-react";
-import { usePathname } from "next/navigation";
-
-const currentUser = {
-  name: "Axemail User",
-  email: "user@axemail.com",
-  imageUrl: "",
-};
+import { useMutation } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import { usePathname, useRouter } from "next/navigation";
+import { logoutUser } from "@/lib/auth/auth-api";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { clearCredentials } from "@/store/slices/auth-slice";
 
 function getInitials(name: string) {
   return name
@@ -48,12 +47,29 @@ function getInitials(name: string) {
 
 export function DashboardHeader() {
   const pathname = usePathname();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state.auth.user);
   const title = getDashboardNavigationTitle(pathname);
   const { isDashboardSidebarOpen } = useDashboardSidebar();
+  const currentUser = {
+    name: user ? `${user.firstName} ${user.lastName}` : "Axemail User",
+    email: user?.email ?? "user@axemail.com",
+    imageUrl: "",
+  };
   const userInitials = getInitials(currentUser.name);
   const profileImageStyle = currentUser.imageUrl
     ? { backgroundImage: `url(${currentUser.imageUrl})` }
     : undefined;
+  const logoutMutation = useMutation({
+    mutationFn: logoutUser,
+    onSettled: () => {
+      dispatch(clearCredentials());
+      toast.success("Logged out successfully.");
+      router.replace("/");
+      router.refresh();
+    },
+  });
 
   return (
     <header className="flex h-(--header-height) min-h-14 shrink-0 items-center gap-2 border-b overflow-hidden transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) bg-black border-none">
@@ -75,7 +91,7 @@ export function DashboardHeader() {
                 aria-label={`Open profile for ${currentUser.name}`}
               >
                 <span
-                  className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-dark-border bg-dark-muted bg-cover bg-center font-google-sans text-sm font-bold text-primary-foreground"
+                  className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-dark-accent bg-cover bg-center font-google-sans text-sm font-bold text-primary-foreground"
                   style={profileImageStyle}
                 >
                   {!currentUser.imageUrl && userInitials}
@@ -147,7 +163,10 @@ export function DashboardHeader() {
                 <AlertDialogCancel className="border border-border bg-transparent font-google-sans text-heading hover:bg-muted hover:text-heading hover:shadow-md hover:shadow-black/20 shadow-sm shadow-[#f2f4f5]/10 transition-all duration-200 ease-in-out">
                   Cancel
                 </AlertDialogCancel>
-                <AlertDialogAction className="bg-destructive! shadow-sm font-google-sans shadow-[#e7000b]/10 transition-all text-destructive-foreground duration-200 ease-in-out hover:bg-red-400 hover:shadow-md hover:shadow-[#e7000b]/20 border border-border">
+                <AlertDialogAction
+                  className="bg-destructive! shadow-sm font-google-sans shadow-[#e7000b]/10 transition-all text-destructive-foreground duration-200 ease-in-out hover:bg-red-400 hover:shadow-md hover:shadow-[#e7000b]/20 border border-border"
+                  onClick={() => logoutMutation.mutate()}
+                >
                   Logout
                 </AlertDialogAction>
               </AlertDialogFooter>

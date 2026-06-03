@@ -2,27 +2,44 @@
 
 import Image from "next/image";
 import { useState, type SyntheticEvent } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { loginUser } from "@/lib/auth/auth-api";
+import { useAppDispatch } from "@/store/hooks";
+import { setCurrentUser } from "@/store/slices/auth-slice";
 
-import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
+import { Eye, EyeOff, LoaderCircle, LockKeyhole, Mail } from "lucide-react";
 import Logo from "../../public/favicons/logo.svg";
 
 function LoginPage() {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const loginMutation = useMutation({
+    mutationFn: loginUser,
+    onSuccess: (session) => {
+      dispatch(setCurrentUser(session.data.user));
+      toast.success("Logged in successfully.");
+      router.replace("/overview");
+      router.refresh();
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Unable to login.");
+    },
+  });
+
   function handleSubmit(event: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     event.preventDefault();
-
-    console.log({
-      email,
-      password,
-    });
+    loginMutation.mutate({ email, password });
   }
 
   return (
@@ -60,7 +77,7 @@ function LoginPage() {
                   type="email"
                   autoComplete="email"
                   placeholder="name@company.com"
-                  className="h-11 text-dark-foreground placeholder:text-dark-muted-foreground rounded-sm border-dark-border border-2 bg-dark-input pl-10 font-inter text-sm shadow-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="h-11 text-dark-foreground placeholder:text-dark-muted-foreground rounded-sm border-dark-border border bg-dark-input pl-10 font-inter text-sm shadow-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                 />
@@ -86,7 +103,7 @@ function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   placeholder="Enter your password"
-                  className="h-11 text-dark-foreground placeholder:text-dark-muted-foreground rounded-sm border-dark-border border-2 bg-dark-input pl-10 font-inter text-sm shadow-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="h-11 text-dark-foreground placeholder:text-dark-muted-foreground rounded-sm border-dark-border border bg-dark-input pl-10 font-inter text-sm shadow-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                 />
@@ -108,9 +125,17 @@ function LoginPage() {
 
             <Button
               type="submit"
-              className="mt-2 h-12 w-full rounded-sm bg-primary font-google-sans text-sm font-semibold text-primary-foreground transition hover:bg-primary-hover border-none"
+              disabled={loginMutation.isPending}
+              className="mt-2 h-12 w-full rounded-sm bg-primary font-google-sans text-sm font-semibold text-primary-foreground transition hover:bg-primary-hover border-none disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Login
+              {loginMutation.isPending ? (
+                <span className="inline-flex items-center gap-2 text-primary-foreground">
+                  Logging In
+                  <LoaderCircle strokeWidth={3} className="size-4 animate-spin" />
+                </span>
+              ) : (
+                "Login"
+              )}
             </Button>
 
             <p className="pt-3 text-center font-inter text-xs leading-auto text-dark-muted-foreground">

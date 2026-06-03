@@ -7,9 +7,6 @@ export async function getMaskServerHealth() {
 
   try {
     const response = await axios.get(env.MASK_MAILER_HEALTHCHECK_URL, {
-      headers: env.MASK_MAILER_API_KEY
-        ? { Authorization: `Bearer ${env.MASK_MAILER_API_KEY}` }
-        : undefined,
       timeout: 15000,
     });
 

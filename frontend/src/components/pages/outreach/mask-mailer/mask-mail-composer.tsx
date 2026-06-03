@@ -305,8 +305,8 @@ export function MaskMailComposer() {
   };
 
   return (
-    <Card className="rounded-xl border-2 border-border bg-card py-0 shadow-sm shadow-black/5 ring-0">
-      <CardHeader className="border-b-2 px-5 py-4">
+    <Card className="rounded-xl border border-border bg-card py-0 shadow-sm shadow-black/5 ring-0">
+      <CardHeader className="border-b px-5 py-4">
         <div>
           <h2 className="font-google-sans text-xl font-semibold text-heading">
             Mask Mail Composer

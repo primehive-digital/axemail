@@ -181,14 +181,16 @@ export async function assignUserLimits(input: {
     const currentAssigned = currentAllocationMap.get(row.mailerType) ?? 0;
     const totalCapacity = capacityMap[row.mailerType] ?? 0;
     const remainingCapacity = Math.max(totalCapacity - assignedMap[row.mailerType], 0);
+    const requestedIncrease = Math.max(row.assignedLimit - currentAssigned, 0);
 
-    if (row.assignedLimit > currentAssigned && row.assignedLimit > remainingCapacity) {
+    if (requestedIncrease > remainingCapacity) {
       throw new AppError("Assigned limit exceeds remaining mailer capacity.", 409, {
         mailerType: mapMailerType(row.mailerType),
         totalCapacity,
         currentlyAssigned: assignedMap[row.mailerType],
         currentUserAssigned: currentAssigned,
         requestedAssigned: row.assignedLimit,
+        requestedIncrease,
         remainingCapacity,
       });
     }

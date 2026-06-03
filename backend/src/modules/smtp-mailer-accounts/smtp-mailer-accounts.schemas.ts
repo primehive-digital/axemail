@@ -30,6 +30,7 @@ export const createSmtpMailerAccountSchema = z.object({
 });
 
 export const updateSmtpMailerAccountSchema = z.object({
+  type: smtpMailerTypeSchema.optional(),
   label: z.string().trim().min(1).optional(),
   email: z.email().toLowerCase().optional(),
   status: smtpMailerAccountStatusSchema.optional(),

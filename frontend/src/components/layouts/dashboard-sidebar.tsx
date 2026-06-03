@@ -16,10 +16,11 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import {
-  DashboardNavigationData,
+  getDashboardNavigationByRole,
   isDashboardNavigationGroup,
 } from "@/constants/dashboard-navigation";
 import { cn } from "@/lib/utils";
+import { useAppSelector } from "@/store/hooks";
 
 import Logo from "../../../public/favicons/logo.svg";
 
@@ -27,6 +28,8 @@ export function DashboardSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
+  const userRole = useAppSelector((state) => state.auth.user?.role);
+  const navigation = getDashboardNavigationByRole(userRole);
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
@@ -75,7 +78,7 @@ export function DashboardSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {DashboardNavigationData.map((entry) =>
+        {navigation.map((entry) =>
           isDashboardNavigationGroup(entry) ? (
             <SidebarGroup key={entry.categoryTitle}>
               <SidebarGroupLabel className="text-primary font-google-sans font-bold uppercase">

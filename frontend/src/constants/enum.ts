@@ -38,6 +38,7 @@ export const TEMPLATE_KEY = {
 } as const;
 
 export type UserRole = (typeof USER_ROLE)[keyof typeof USER_ROLE];
+export type UserStatus = (typeof USER_STATUS)[keyof typeof USER_STATUS];
 export type MailerType = (typeof MAILER_TYPE)[keyof typeof MAILER_TYPE];
 export type MailerSmtpHealth = (typeof MAILER_SMTP_HEALTH)[keyof typeof MAILER_SMTP_HEALTH];
 export type MaskMailerFromEmailExt =

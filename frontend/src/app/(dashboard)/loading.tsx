@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 function DashboardMetricSkeleton() {
   return (
-    <div className="rounded-xl border-2 border-border bg-card p-5 shadow-sm shadow-black/5">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm shadow-black/5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <Skeleton className="size-12 rounded-xl" />
@@ -24,8 +24,8 @@ function DashboardMetricSkeleton() {
 
 function DashboardTableSkeleton() {
   return (
-    <div className="rounded-xl border-2 border-border bg-card shadow-sm shadow-black/5">
-      <div className="flex flex-col gap-4 border-b-2 border-border px-5 py-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
+    <div className="rounded-xl border border-border bg-card shadow-sm shadow-black/5">
+      <div className="flex flex-col gap-4 border-b border-border px-5 py-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-2">
           <Skeleton className="h-6 w-52" />
           <Skeleton className="h-4 w-72 max-w-full" />
@@ -38,7 +38,7 @@ function DashboardTableSkeleton() {
 
       <div className="p-0">
         <div className="overflow-hidden">
-          <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 border-b-2 border-border bg-secondary/60 px-5 py-4">
+          <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 border-b border-border bg-secondary/60 px-5 py-4">
             <Skeleton className="h-4 w-20" />
             <Skeleton className="h-4 w-16" />
             <Skeleton className="h-4 w-16" />
@@ -48,7 +48,7 @@ function DashboardTableSkeleton() {
           {Array.from({ length: 5 }, (_, index) => (
             <div
               key={index}
-              className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 border-b-2 border-border px-5 py-4 last:border-b-0"
+              className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 border-b border-border px-5 py-4 last:border-b-0"
             >
               <div className="flex items-center gap-3">
                 <Skeleton className="size-10 rounded-full" />
@@ -65,7 +65,7 @@ function DashboardTableSkeleton() {
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 border-t-2 border-border px-5 py-4">
+      <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
         <Skeleton className="size-8 rounded-sm" />
         <Skeleton className="size-8 rounded-sm" />
         <Skeleton className="size-8 rounded-sm" />

@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
 import type { ReactNode } from "react";
 import { Toaster } from "react-hot-toast";
 
+import { AuthBootstrap } from "@/components/providers/auth-bootstrap";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/providers/query-provider";
 import { ReduxProvider } from "@/providers/redux-provider";
@@ -12,6 +13,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <ReduxProvider>
       <QueryProvider>
         <TooltipProvider>
+          <AuthBootstrap />
           <Toaster
             position="top-right"
             gutter={10}
@@ -24,11 +26,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
               duration: 3500,
 
               className: `
-            !bg-black
-            !text-slate-50
+            !bg-white
+            !text-heading
             !rounded-[18px]
             !border
-            !border-white/10
+            !border-border
             !shadow-2xl
             !px-4
             !py-3
@@ -49,21 +51,21 @@ export function AppProviders({ children }: { children: ReactNode }) {
               success: {
                 iconTheme: {
                   primary: "#22c55e",
-                  secondary: "#000",
+                  secondary: "#fff",
                 },
               },
 
               error: {
                 iconTheme: {
                   primary: "#ef4444",
-                  secondary: "#000",
+                  secondary: "#fff",
                 },
               },
 
               loading: {
                 iconTheme: {
                   primary: "#3b82f6",
-                  secondary: "#000",
+                  secondary: "#fff",
                 },
               },
             }}

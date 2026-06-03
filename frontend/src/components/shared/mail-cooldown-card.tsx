@@ -33,7 +33,7 @@ export function MailCooldownCard({
   return (
     <Card
       className={cn(
-        "rounded-xl border-2 border-border bg-card py-0 shadow-sm shadow-black/5 ring-0",
+        "rounded-xl border border-border bg-card py-0 shadow-sm shadow-black/5 ring-0",
         className,
       )}
     >
