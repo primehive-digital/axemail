@@ -114,23 +114,26 @@ export async function getResourceUsageDashboard() {
   };
 }
 
-export async function getActivityInsightsDashboard(input: { month?: string; startDate?: string; endDate?: string }) {
-  const [poolSummary, progressRows, performance] = await Promise.all([
-    getMailerPoolSummary(),
-    getTodayProgressRows(),
-    getPerformanceReport(input),
+export async function getActivityInsightsDashboard(input: {
+  role: Role;
+  userId: string;
+  month?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  const isEmployee = input.role === Role.EMPLOYEE;
+  const [progress, tracker, performance] = await Promise.all([
+    getActivityProgress(input),
+    isEmployee ? Promise.resolve([]) : getTodayProgressRows(),
+    isEmployee
+      ? Promise.resolve(null)
+      : getPerformanceReport({ month: input.month, startDate: input.startDate, endDate: input.endDate }),
   ]);
 
   return {
-    progress: poolSummary.map((pool) => ({
-      mailerType: pool.mailerType,
-      title: `${pool.title} Progress`,
-      description: `Today's ${pool.title.toLowerCase()} activity against the daily target.`,
-      sent: pool.used,
-      target: pool.assigned,
-      percentage: calculatePercentage(pool.used, pool.assigned),
-    })),
-    tracker: progressRows,
+    role: mapRole(input.role),
+    progress,
+    tracker,
     performance,
   };
 }
@@ -294,6 +297,58 @@ async function getMailerPoolSummary() {
   ];
 }
 
+async function getActivityProgress(input: { role: Role; userId: string }) {
+  const where = input.role === Role.EMPLOYEE ? { id: input.userId } : { role: Role.EMPLOYEE };
+  const [assignedByType, usedByType] = await Promise.all([
+    prisma.userMailerAllocation.groupBy({
+      by: ["mailerType"],
+      where: { user: where },
+      _sum: { assignedLimit: true },
+    }),
+    prisma.deliveryRecord.groupBy({
+      by: ["mailerType"],
+      where: {
+        user: where,
+        createdAt: { gte: startOfTodayUtc() },
+        status: DeliveryStatus.SENT,
+      },
+      _count: { _all: true },
+    }),
+  ]);
+  const assignedMap = toNumberMap(assignedByType, "assignedLimit");
+  const usedMap = usedByType.reduce<Record<MailerType, number>>((accumulator, row) => {
+    accumulator[row.mailerType] = row._count._all;
+    return accumulator;
+  }, emptyMailerMap());
+  const progress = mailerTypes.map((mailerType) => buildActivityProgressItem(mailerType, usedMap[mailerType], assignedMap[mailerType] ?? 0));
+  const total = progress.reduce(
+    (accumulator, item) => ({ sent: accumulator.sent + item.sent, target: accumulator.target + item.target }),
+    { sent: 0, target: 0 },
+  );
+
+  return [
+    ...progress,
+    {
+      mailerType: "total" as const,
+      title: "Total Mailer Progress",
+      description: "Combined activity across all assigned mailer limits today.",
+      sent: total.sent,
+      target: total.target,
+      percentage: calculatePercentage(total.sent, total.target),
+    },
+  ];
+}
+
+function buildActivityProgressItem(mailerType: MailerType, sent: number, target: number) {
+  return {
+    mailerType: mapMailerType(mailerType),
+    title: `${formatMailerName(mailerType)} Progress`,
+    description: `Today's ${formatMailerName(mailerType).toLowerCase()} activity against the assigned daily target.`,
+    sent,
+    target,
+    percentage: calculatePercentage(sent, target),
+  };
+}
 async function getAllocationRows() {
   const users = await prisma.user.findMany({
     where: { role: Role.EMPLOYEE },

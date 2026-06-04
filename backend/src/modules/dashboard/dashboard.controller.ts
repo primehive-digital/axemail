@@ -43,7 +43,7 @@ export const getResourceUsageDashboardHandler = asyncHandler(async (_request: Re
 
 export const getActivityInsightsDashboardHandler = asyncHandler(async (request: Request, response: Response) => {
   const query = dashboardReportQuerySchema.parse(request.query);
-  response.json({ data: await getActivityInsightsDashboard(query) });
+  response.json({ data: await getActivityInsightsDashboard({ ...query, role: request.auth!.role, userId: request.auth!.userId }) });
 });
 
 export const getUserManagementDashboardHandler = asyncHandler(async (request: Request, response: Response) => {
