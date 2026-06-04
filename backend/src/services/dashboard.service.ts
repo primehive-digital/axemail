@@ -88,15 +88,15 @@ export async function getResourceUsageDashboard() {
         key: "totalDomains",
         title: "Total Domains",
         label: "Domains",
-        value: metrics.totalDomains,
-        description: "Domains used for mailboxes in the mailer pool.",
+        value: metrics.totalDomainAccounts,
+        description: "Domain SMTP accounts in the mailer pool.",
       },
       {
         key: "totalMailboxes",
         title: "Total Mailboxes",
         label: "Domain Mailboxes",
-        value: metrics.totalMailboxes,
-        description: "Mailboxes used in the mailer pool.",
+        value: metrics.totalDomainAccounts,
+        description: "Domain mailboxes in the mailer pool.",
       },
       {
         key: "totalServers",
@@ -383,13 +383,16 @@ async function getUserMetrics(actorRole: Role) {
 }
 
 function buildResourceLimit(key: "gmail" | "domain" | "mask", resource: string, description: string, perAccount: number, perDay: number) {
+  const officeDaysPerMonth = 22;
+
   return {
     key,
     resource,
     description,
     perAccount,
     perDay,
-    perMonth: perDay * 30,
+    perMonth: perDay * officeDaysPerMonth,
+    officeDaysPerMonth,
   };
 }
 

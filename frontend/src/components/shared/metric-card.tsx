@@ -76,7 +76,7 @@ export function MetricCard({
             )}
           </div>
           <div className="flex items-end gap-1.5">
-            <span className="digits text-4xl font-semibold leading-none">
+            <span className="digits text-4xl font-bold leading-none">
               {value}
             </span>
             {typeof total === "number" && (

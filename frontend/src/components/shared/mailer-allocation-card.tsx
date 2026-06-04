@@ -28,7 +28,7 @@ export function MailerAllocationCard({
     <Card
       className={cn(
         "rounded-xl border border-border bg-card py-0 shadow-sm shadow-black/5 ring-0",
-        className
+        className,
       )}
     >
       <CardContent className="flex min-h-52 flex-col justify-between gap-6 p-5">
@@ -53,7 +53,7 @@ export function MailerAllocationCard({
             </div>
           </div>
           <div className="text-right">
-            <span className="digits block text-4xl font-semibold leading-none">
+            <span className="digits block text-4xl font-bold leading-none text-primary">
               {limit}
             </span>
             <span className="font-inter text-xs font-medium text-muted-foreground">

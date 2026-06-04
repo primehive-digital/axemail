@@ -44,7 +44,7 @@ export function MailerProgressCard({
             </div>
           </div>
           <div className="text-right">
-            <span className="digits block text-4xl font-semibold leading-none">
+            <span className="digits block text-4xl font-bold text-primary leading-none">
               {progress}%
             </span>
             <span className="font-inter text-xs font-medium text-muted-foreground">
@@ -56,7 +56,7 @@ export function MailerProgressCard({
         <div className="space-y-4">
           <div className="h-2 overflow-hidden rounded-full bg-secondary">
             <div
-              className="h-full rounded-full bg-yellow-500 transition-all duration-300 ease-in-out"
+              className="h-full rounded-full bg-green-500 transition-all duration-300 ease-in-out"
               style={{ width: `${progress}%` }}
             />
           </div>

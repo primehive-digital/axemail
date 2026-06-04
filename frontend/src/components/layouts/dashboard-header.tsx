@@ -128,7 +128,7 @@ export function DashboardHeader() {
           </DropdownMenu>
           <Separator
             orientation="vertical"
-            className="hidden data-[orientation=vertical]:h-7 lg:block"
+            className="hidden data-[orientation=vertical]:h-8 lg:block rounded-full! mx-2 my-auto bg-dark-border w-0.75!"
           />
           <Notification />
           <AlertDialog>

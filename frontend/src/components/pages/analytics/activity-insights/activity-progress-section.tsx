@@ -7,7 +7,7 @@ import { MailerProgressCard } from "./mailer-progress-card";
 const mailerProgressMetrics = [
   {
     title: "Gmail Mailer Progress",
-    description: "Today's Gmail sender activity against the daily target.",
+    description: "Activity against the daily target.",
     logoSrc: "/icons/gmail-allocation-logo.png",
     logoAlt: "Gmail mailer progress",
     sent: 68,
@@ -15,7 +15,7 @@ const mailerProgressMetrics = [
   },
   {
     title: "Domain Mailer Progress",
-    description: "Today's domain mailbox activity against the daily target.",
+    description: "Activity against the daily target.",
     logoSrc: "/icons/domain-allocation-logo.png",
     logoAlt: "Domain mailer progress",
     sent: 142,
@@ -23,7 +23,7 @@ const mailerProgressMetrics = [
   },
   {
     title: "Mask Mailer Progress",
-    description: "Today's mask sender activity against the daily target.",
+    description: "Activity against the daily target.",
     logoSrc: "/icons/mask-allocation-logo.png",
     logoAlt: "Mask mailer progress",
     sent: 96,
@@ -31,7 +31,7 @@ const mailerProgressMetrics = [
   },
   {
     title: "Total Mailer Progress",
-    description: "Combined sending activity across all mailer pools today.",
+    description: "Combined Activity across all mailer pools today.",
     logoSrc: "/icons/total-allocation-logo.png",
     logoAlt: "Total mailer progress",
     sent: 306,
