@@ -1,19 +1,24 @@
 import { MailerCapacityCard } from "@/components/shared/mailer-capacity-card";
+import type { MailerStatus } from "@/lib/outreach/outreach-api";
 
-const maskMailerData = {
+const fallbackStatus = {
   capacity: {
     title: "Mask Capacity",
-    logoSrc: "/icons/mask-capacity-logo.png",
-    logoAlt: "Mask capacity",
-    allocated: 100,
-    sent: 18,
+    allotted: 0,
+    sent: 0,
   },
 };
 
-export function MaskMailerStatusSection() {
+export function MaskMailerStatusSection({ status, isLoading }: { status?: MailerStatus; isLoading?: boolean }) {
+  const visibleStatus = status ?? fallbackStatus;
+
   return (
     <section className="grid gap-4">
-      <MailerCapacityCard className="w-full" {...maskMailerData.capacity} />
+      {isLoading ? (
+        <div className="min-h-52 rounded-xl border border-border bg-card shadow-sm shadow-black/5" />
+      ) : (
+        <MailerCapacityCard className="w-full" title={visibleStatus.capacity.title} logoSrc="/icons/mask-capacity-logo.png" logoAlt="Mask capacity" allocated={visibleStatus.capacity.allotted} sent={visibleStatus.capacity.sent} />
+      )}
     </section>
   );
 }

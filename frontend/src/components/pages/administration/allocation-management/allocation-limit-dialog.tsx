@@ -168,7 +168,7 @@ export function AllocationLimitDialog({
                   <ChevronDown className="size-4 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-(--radix-dropdown-menu-trigger-width)">
+              <DropdownMenuContent align="start" className="max-h-72 w-(--radix-dropdown-menu-trigger-width) overflow-y-auto p-1">
                 {users.map((user) => (
                   <DropdownMenuItem key={user.id} onSelect={() => handleSelectUser(user)} className="font-inter">
                     <span className="grid w-4 place-items-center">{selectedUserId === user.id && <Check className="size-4" />}</span>

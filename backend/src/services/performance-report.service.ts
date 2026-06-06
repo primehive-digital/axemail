@@ -195,19 +195,7 @@ export async function getPerformanceReport(input: {
 }
 
 async function getReportAvailability(now: Date) {
-  const retentionStart = getReportRetentionCutoff(now);
-  const firstRecord = await prisma.deliveryRecord.findFirst({
-    where: {
-      OR: [
-        { createdAt: { gte: retentionStart } },
-        { sentAt: { gte: retentionStart } },
-      ],
-    },
-    orderBy: { createdAt: "asc" },
-    select: { createdAt: true, sentAt: true },
-  });
-  const firstDate = firstRecord?.sentAt ?? firstRecord?.createdAt ?? now;
-  const start = startOfUtcDay(firstDate < retentionStart ? retentionStart : firstDate);
+  const start = startOfUtcDay(getReportRetentionCutoff(now));
   const end = startOfUtcDay(now);
 
   return {

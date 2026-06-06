@@ -5,15 +5,17 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import type { DateRange } from "react-day-picker";
 import toast from "react-hot-toast";
 
-import { USER_ROLE } from "@/constants/enum";
 import { ActivityProgressSection } from "@/components/pages/analytics/activity-insights/activity-progress-section";
+import { EmployeeMailerProgressChartCard } from "@/components/pages/analytics/activity-insights/employee-mailer-progress-chart-card";
 import { EmployeePerformanceTableCard } from "@/components/pages/analytics/activity-insights/employee-performance-table-card";
 import { ProgressTrackerTableCard } from "@/components/pages/analytics/activity-insights/progress-tracker-table-card";
+import { USER_ROLE } from "@/constants/enum";
 import {
   downloadEmployeePerformanceReport,
   getActivityInsightsDashboard,
   type ActivityInsightsQuery,
 } from "@/lib/activity-insights/activity-insights-api";
+import { useAppSelector } from "@/store/hooks";
 
 const queryKey = "activity-insights-dashboard";
 
@@ -44,6 +46,7 @@ function buildActivityQuery(dateRange: DateRange | undefined): ActivityInsightsQ
 }
 
 export function ActivityInsightsDashboard() {
+  const currentUserRole = useAppSelector((state) => state.auth.user?.role);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => getInitialDateRange());
   const queryInput = useMemo(() => buildActivityQuery(dateRange), [dateRange]);
   const query = useQuery({
@@ -55,7 +58,8 @@ export function ActivityInsightsDashboard() {
     onSuccess: () => toast.success("Report download started."),
     onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to download report."),
   });
-  const isEmployee = query.data?.role === USER_ROLE.EMPLOYEE;
+  const activeRole = query.data?.role ?? currentUserRole;
+  const isEmployee = activeRole === USER_ROLE.EMPLOYEE;
 
   return (
     <div className="flex flex-1 flex-col gap-12 p-4 lg:p-6">
@@ -66,7 +70,9 @@ export function ActivityInsightsDashboard() {
         onRefresh={() => query.refetch()}
       />
 
-      {!isEmployee && (
+      {isEmployee && <EmployeeMailerProgressChartCard metrics={query.data?.progress ?? []} isLoading={query.isLoading} />}
+
+      {activeRole && !isEmployee && (
         <>
           <ProgressTrackerTableCard rows={query.data?.tracker ?? []} isLoading={query.isLoading} />
           <EmployeePerformanceTableCard
@@ -76,7 +82,6 @@ export function ActivityInsightsDashboard() {
             isDownloading={downloadMutation.isPending}
             onDateRangeChange={setDateRange}
             onDownload={(format) => downloadMutation.mutate(format)}
-            onRefresh={() => query.refetch()}
           />
         </>
       )}

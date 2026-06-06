@@ -6,15 +6,11 @@ import {
   getDashboardMailerStatus,
   getDashboardOverview,
   getInfrastructureControlDashboard,
-  getResourceUsageDashboard,
-  getTemplateSenderDashboard,
-  getUserManagementDashboard,
+  getResourceUsageDashboard,  getUserManagementDashboard,
 } from "@/services/dashboard.service";
 import {
   dashboardMailerTypeParamSchema,
-  dashboardReportQuerySchema,
-  templateSenderQuerySchema,
-} from "@/modules/dashboard/dashboard.schemas";
+  dashboardReportQuerySchema,} from "@/modules/dashboard/dashboard.schemas";
 import { asyncHandler } from "@/utils/async-handler";
 
 export const getDashboardOverviewHandler = asyncHandler(async (request: Request, response: Response) => {
@@ -30,11 +26,6 @@ export const getDashboardMailerStatusHandler = asyncHandler(async (request: Requ
       mailerType,
     }),
   });
-});
-
-export const getTemplateSenderDashboardHandler = asyncHandler(async (request: Request, response: Response) => {
-  const { mailerType } = templateSenderQuerySchema.parse(request.query);
-  response.json({ data: await getTemplateSenderDashboard({ userId: request.auth!.userId, mailerType }) });
 });
 
 export const getResourceUsageDashboardHandler = asyncHandler(async (_request: Request, response: Response) => {

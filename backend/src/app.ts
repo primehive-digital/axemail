@@ -9,6 +9,7 @@ import { healthRouter } from "@/modules/health/health.routes";
 import { reportsRouter } from "@/modules/reports/reports.routes";
 import { smtpMailerAccountsRouter } from "@/modules/smtp-mailer-accounts/smtp-mailer-accounts.routes";
 import { mailersRouter } from "@/modules/mailers/mailers.routes";
+import { templatesRouter } from "@/modules/templates/templates.routes";
 import { usageRouter } from "@/modules/usage/usage.routes";
 import { usersRouter } from "@/modules/users/users.routes";
 import { attachAuth } from "@/middleware/auth";
@@ -27,7 +28,7 @@ export function createApp() {
       credentials: true,
     }),
   );
-  app.use(express.json({ limit: "2mb" }));
+  app.use(express.json({ limit: "30mb" }));
   app.use((request, response, next) => {
     const startedAt = Date.now();
     response.on("finish", () => {
@@ -44,6 +45,7 @@ export function createApp() {
   app.use("/api", dashboardRouter);
   app.use("/api", usageRouter);
   app.use("/api", reportsRouter);
+  app.use("/api", templatesRouter);
   app.use("/api", smtpMailerAccountsRouter);
   app.use("/api", mailersRouter);
 

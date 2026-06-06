@@ -43,29 +43,6 @@ export async function getDashboardMailerStatus(input: { role: Role; userId: stri
   };
 }
 
-export async function getTemplateSenderDashboard(input: { userId: string; mailerType: MailerType }) {
-  const [status, templates] = await Promise.all([
-    getDashboardMailerStatus({ role: Role.EMPLOYEE, userId: input.userId, mailerType: input.mailerType }),
-    prisma.emailTemplate.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-  ]);
-
-  return {
-    settings: {
-      mailerTypes: mailerTypes.map((mailerType) => ({ value: mapMailerType(mailerType), label: formatMailerName(mailerType) })),
-      templates: templates.map((template) => ({
-        value: template.key,
-        label: template.name,
-        description: template.description,
-      })),
-    },
-    status,
-    templateDetails: templates.map((template) => ({
-      templateKey: template.key,
-      fields: template.fields,
-    })),
-  };
-}
-
 export async function getResourceUsageDashboard() {
   const [metrics, policies] = await Promise.all([
     getSmtpMailerAccountMetrics(),

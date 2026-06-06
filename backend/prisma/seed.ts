@@ -28,7 +28,7 @@ async function main() {
   await prisma.emailTemplate.deleteMany();
   await prisma.user.deleteMany();
 
-  await prisma.user.create({
+  const admin = await prisma.user.create({
     data: {
       firstName: "Admin",
       lastName: "Authority",
@@ -50,16 +50,19 @@ async function main() {
 
   await prisma.emailTemplate.create({
     data: {
-      key: "template-01",
-      name: "Template 01",
-      description: "Default outreach template.",
+      key: "review-notice-default",
+      name: "Review Notice",
+      description: "Default outreach template for review notices.",
+      subject: "Review notice for {{brandName}}",
       fields: [
-        { key: "campaignName", label: "Campaign Name", required: true },
-        { key: "referenceCode", label: "Reference Code", required: false },
-        { key: "notes", label: "Notes", required: false },
+        { key: "brandName", label: "Brand Name", placeholder: "Axemail", type: "text", required: true },
+        { key: "referenceCode", label: "Reference Code", placeholder: "AXE-2026-001", type: "text", required: false },
+        { key: "noticeDate", label: "Notice Date", placeholder: "2026-06-04", type: "date", required: false },
       ],
-      contentHtml: null,
+      supportedMailers: ["gmail", "domain", "mask"],
+      contentHtml: "<p>Hello,</p><p>This is a notice regarding <strong>{{brandName}}</strong>.</p><p>Reference: {{referenceCode}}</p><p>Date: {{noticeDate}}</p>",
       isActive: true,
+      createdById: admin.id,
     },
   });
 }

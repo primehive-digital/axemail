@@ -10,9 +10,8 @@ export async function cleanupExpiredDeliveryRecords() {
     cleanupPromise = prisma.deliveryRecord
       .deleteMany({
         where: {
-          createdAt: {
-            lt: cutoff,
-          },
+          createdAt: { lt: cutoff },
+          OR: [{ sentAt: null }, { sentAt: { lt: cutoff } }],
         },
       })
       .then((result) => result.count)
@@ -37,7 +36,7 @@ export function startReportRetentionSchedule() {
 }
 
 function getRetentionCutoff(now: Date) {
-  const monthOffset = now.getUTCDate() <= 5 ? -1 : 0;
+  const monthOffset = now.getUTCDate() <= 7 ? -1 : 0;
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + monthOffset, 1));
 }
 

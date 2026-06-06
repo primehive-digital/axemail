@@ -11,7 +11,6 @@ import {
   FileSpreadsheet,
   FileText,
   Loader2,
-  RefreshCw,
   UserRound,
 } from "lucide-react";
 import type { DateRange } from "react-day-picker";
@@ -42,16 +41,8 @@ function RatioValue({ sent, target, className }: { sent: number; target: number;
   );
 }
 
-function formatDateRange(dateRange: DateRange | undefined) {
-  if (!dateRange?.from) {
-    return "Select date range";
-  }
-
-  if (!dateRange.to) {
-    return format(dateRange.from, "MMM d, yyyy");
-  }
-
-  return `${format(dateRange.from, "MMM d, yyyy")} - ${format(dateRange.to, "MMM d, yyyy")}`;
+function formatInputDate(date: Date | undefined) {
+  return date ? format(date, "MM/dd/yyyy") : "Select date";
 }
 
 function TableLoader() {
@@ -81,6 +72,21 @@ function getMailerTarget(employee: PerformanceReportEmployee, mailer: "gmail" | 
   return employee.mailerTargets[mailer] * daysTracked;
 }
 
+function parseDateKey(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function getMonthStart(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function getCalendarMonthCount(start: Date, end: Date) {
+  const monthCount = (end.getFullYear() - start.getFullYear()) * 12 + end.getMonth() - start.getMonth() + 1;
+  return Math.min(Math.max(monthCount, 1), 2);
+}
+
+
 export function EmployeePerformanceTableCard({
   report,
   dateRange,
@@ -88,7 +94,6 @@ export function EmployeePerformanceTableCard({
   isDownloading,
   onDateRangeChange,
   onDownload,
-  onRefresh,
 }: {
   report: PerformanceReport | null;
   dateRange: DateRange | undefined;
@@ -96,11 +101,17 @@ export function EmployeePerformanceTableCard({
   isDownloading?: boolean;
   onDateRangeChange: (range: DateRange | undefined) => void;
   onDownload: (format: "excel" | "pdf") => void;
-  onRefresh: () => void;
 }) {
   const [page, setPage] = useState(1);
   const employees = report?.employees ?? emptyEmployees;
   const daysTracked = report?.range.daysTracked ?? 0;
+  const [dateRangePickerOpen, setDateRangePickerOpen] = useState(false);
+  const availabilityStart = report ? parseDateKey(report.availability.start) : getMonthStart(new Date());
+  const availabilityEnd = report ? parseDateKey(report.availability.end) : new Date();
+  const startMonth = getMonthStart(availabilityStart);
+  const endMonth = getMonthStart(availabilityEnd);
+  const numberOfMonths = getCalendarMonthCount(startMonth, endMonth);
+  const disabledDates = [{ before: availabilityStart }, { after: availabilityEnd }];
   const pageCount = Math.max(Math.ceil(employees.length / rowsPerPage), 1);
   const currentPage = Math.min(page, pageCount);
   const visiblePerformance = useMemo(() => {
@@ -120,28 +131,32 @@ export function EmployeePerformanceTableCard({
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-10 rounded-full px-4 font-google-sans shadow-sm shadow-[#f2f4f5]/10 transition-all duration-200 ease-in-out hover:bg-secondary hover:shadow-md hover:shadow-black/20"
-              onClick={onRefresh}
-            >
-              Refresh data
-              <RefreshCw className="size-4" />
-            </Button>
-            <Popover>
+            <Popover open={dateRangePickerOpen} onOpenChange={setDateRangePickerOpen}>
               <PopoverTrigger asChild>
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-10 min-w-62 justify-start rounded-full px-4 font-google-sans shadow-sm shadow-[#f2f4f5]/10 transition-all duration-200 ease-in-out hover:bg-secondary hover:shadow-md hover:shadow-black/20"
+                  className="h-10 min-w-82 justify-between rounded-full px-4 font-google-sans shadow-sm shadow-[#f2f4f5]/10 transition-all duration-200 ease-in-out hover:bg-secondary hover:shadow-md hover:shadow-black/20"
                 >
-                  <CalendarDays className="size-4" />
-                  <span className="truncate">{formatDateRange(dateRange)}</span>
+                  <span className="flex min-w-0 items-center gap-4">
+                    <span className="truncate">{formatInputDate(dateRange?.from)}</span>
+                    <span className="h-4 w-px bg-border" />
+                    <span className="truncate">{formatInputDate(dateRange?.to)}</span>
+                  </span>
+                  <CalendarDays className="size-4 shrink-0 text-heading" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-auto">
-                <Calendar mode="range" selected={dateRange} onSelect={onDateRangeChange} numberOfMonths={2} />
+              <PopoverContent align="end" className="w-auto p-0">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={onDateRangeChange}
+                  numberOfMonths={numberOfMonths}
+                  startMonth={startMonth}
+                  endMonth={endMonth}
+                  defaultMonth={dateRange?.from ?? availabilityEnd}
+                  disabled={disabledDates}
+                />
               </PopoverContent>
             </Popover>
             <DropdownMenu>
