@@ -395,20 +395,10 @@ async function getTodayProgressRows() {
 
 async function getUserMetrics(actorRole: Role) {
   const where = actorRole === Role.MANAGER ? { role: Role.EMPLOYEE } : { role: { in: [Role.MANAGER, Role.EMPLOYEE] } };
-  const [users, activeSessions] = await Promise.all([
-    prisma.user.findMany({ where }),
-    prisma.userSession.count({
-      where: {
-        revokedAt: null,
-        expiresAt: { gt: new Date() },
-        user: where,
-      },
-    }),
-  ]);
+  const users = await prisma.user.findMany({ where });
 
   return [
     { key: "totalUsers", title: "Total Users", label: "Accounts", value: users.length },
-    { key: "activeSessions", title: "Active Sessions", label: "Live", value: activeSessions },
     { key: "totalManagers", title: "Total Managers", label: "Managers", value: users.filter((user) => user.role === Role.MANAGER).length },
     { key: "totalEmployees", title: "Total Employees", label: "Employees", value: users.filter((user) => user.role === Role.EMPLOYEE).length },
   ];

@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
-import { Edit3, FileText, LoaderCircle, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
+import { Copy, Edit3, FileText, LoaderCircle, Trash2 } from "lucide-react";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -21,15 +22,16 @@ export function TemplatesTableCard({ templates, isLoading, onEdit, onDelete, del
       <CardHeader className="border-b px-5 py-4 pt-6">
         <div>
           <h2 className="font-google-sans text-xl font-semibold text-heading">Template Directory</h2>
-          <p className="font-inter text-sm text-muted-foreground">Manage reusable template content, fields, and mailer availability.</p>
+          <p className="font-inter text-sm text-muted-foreground">Manage reusable template content, fields, template IDs, and mailer availability.</p>
         </div>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] border-collapse">
+          <table className="w-full min-w-[1080px] border-collapse">
             <thead>
               <tr className="border-b bg-secondary/60 text-left font-google-sans text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 <th className="px-5 py-4">Template</th>
+                <th className="px-5 py-4">Template ID</th>
                 <th className="px-5 py-4">Mailers</th>
                 <th className="px-5 py-4">Fields</th>
                 <th className="px-5 py-4">Status</th>
@@ -39,7 +41,7 @@ export function TemplatesTableCard({ templates, isLoading, onEdit, onDelete, del
             <tbody className="h-[340px] align-top">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-16 text-center">
+                  <td colSpan={6} className="px-5 py-16 text-center">
                     <span className="inline-flex items-center gap-2 font-inter text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" /> Loading templates...</span>
                   </td>
                 </tr>
@@ -54,6 +56,9 @@ export function TemplatesTableCard({ templates, isLoading, onEdit, onDelete, del
                           <p className="max-w-sm truncate font-inter text-xs text-muted-foreground">{template.description || template.subject}</p>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <TemplateIdCell id={template.id} />
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex flex-wrap gap-2">
@@ -72,7 +77,7 @@ export function TemplatesTableCard({ templates, isLoading, onEdit, onDelete, del
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-5 py-16 text-center font-inter text-sm text-muted-foreground">No templates found.</td>
+                  <td colSpan={6} className="px-5 py-16 text-center font-inter text-sm text-muted-foreground">No templates found.</td>
                 </tr>
               )}
             </tbody>
@@ -85,6 +90,22 @@ export function TemplatesTableCard({ templates, isLoading, onEdit, onDelete, del
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function TemplateIdCell({ id }: { id: string }) {
+  async function copyTemplateId() {
+    await navigator.clipboard.writeText(id);
+    toast.success("Template ID copied.");
+  }
+
+  return (
+    <div className="flex max-w-64 items-center gap-2 rounded-sm border border-border bg-secondary/60 px-3 py-2">
+      <code className="min-w-0 flex-1 truncate font-mono text-xs text-heading">{id}</code>
+      <Button type="button" size="icon-sm" variant="ghost" aria-label="Copy template ID" onClick={copyTemplateId} className="size-7 shrink-0 rounded-full">
+        <Copy className="size-3.5" />
+      </Button>
+    </div>
   );
 }
 

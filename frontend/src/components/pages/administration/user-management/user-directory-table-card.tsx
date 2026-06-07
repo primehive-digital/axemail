@@ -7,7 +7,6 @@ import {
   CircleAlert,
   LoaderCircle,
   LogOut,
-  RefreshCw,
   Trash2,
   UserRound,
 } from "lucide-react";
@@ -166,8 +165,6 @@ export function UserDirectoryTableCard({
   users,
   canManageAccounts,
   isLoading,
-  isRefreshing,
-  onRefresh,
   onCreate,
   onUpdate,
   onDelete,
@@ -180,8 +177,6 @@ export function UserDirectoryTableCard({
   users: UserRecord[];
   canManageAccounts: boolean;
   isLoading?: boolean;
-  isRefreshing?: boolean;
-  onRefresh: () => void;
   onCreate: (input: Required<AccountPayload>) => Promise<unknown> | void;
   onUpdate: (userId: string, input: AccountPayload) => Promise<unknown> | void;
   onDelete: (userId: string) => Promise<unknown> | void;
@@ -209,10 +204,6 @@ export function UserDirectoryTableCard({
           </div>
 
           <div className="flex flex-col justify-end gap-2 sm:flex-row">
-            <Button variant="outline" className="h-10 rounded-full px-4 font-google-sans shadow-sm shadow-[#f2f4f5]/10 transition-all duration-200 ease-in-out hover:bg-secondary hover:shadow-md hover:shadow-black/20" onClick={onRefresh} disabled={isRefreshing}>
-              Refresh data
-              <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
-            </Button>
             {canManageAccounts && <AddAccountDialog onSubmit={onCreate} isPending={isCreating} />}
           </div>
         </div>

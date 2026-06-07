@@ -117,7 +117,7 @@ export function TemplateFormDialog({ mode, trigger, template, open: controlledOp
         <form className="space-y-5" onSubmit={handleSubmit}>
           <div className="grid gap-4 md:grid-cols-2">
             <TemplateInput id="template-name" label="Template Name" placeholder="Review Notice" icon={FileText} value={form.name} required onChange={(value) => update("name", value)} />
-            <TemplateInput id="template-subject" label="Subject" placeholder="Notice for {{brandName}}" icon={Tag} value={form.subject} required onChange={(value) => update("subject", value)} />
+            <TemplateInput id="template-subject" label="Subject" placeholder="Notice for {{key}}" icon={Tag} value={form.subject} required onChange={(value) => update("subject", value)} />
           </div>
 
           <div>
@@ -145,7 +145,7 @@ export function TemplateFormDialog({ mode, trigger, template, open: controlledOp
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h3 className="font-google-sans text-base font-semibold text-heading">Custom Fields</h3>
-                <p className="font-inter text-sm text-muted-foreground">Use field keys inside content as placeholders, for example {"{{brandName}}"}.</p>
+                <p className="font-inter text-sm text-muted-foreground">Use field keys inside content as placeholders, for example {"{{key}}"}.</p>
               </div>
               <Button type="button" variant="outline" onClick={addField} className="h-9 rounded-full bg-background font-google-sans">
                 <Plus className="size-4" />
@@ -156,11 +156,14 @@ export function TemplateFormDialog({ mode, trigger, template, open: controlledOp
             <div className="mt-4 space-y-3">
               {form.fields.map((field, index) => (
                 <div key={index} className="grid gap-3 rounded-lg border border-border bg-card p-3 md:grid-cols-[1fr_1fr_1fr_auto_auto]">
-                  <Input value={field.key} onChange={(event) => updateField(index, { key: event.target.value })} placeholder="brandName" className="h-10 rounded-sm bg-background font-inter text-sm" />
-                  <Input value={field.label} onChange={(event) => updateField(index, { label: event.target.value })} placeholder="Brand Name" className="h-10 rounded-sm bg-background font-inter text-sm" />
-                  <Input value={field.placeholder ?? ""} onChange={(event) => updateField(index, { placeholder: event.target.value })} placeholder="Axemail" className="h-10 rounded-sm bg-background font-inter text-sm" />
-                  <FieldTypeDropdown value={field.type} onChange={(type) => updateField(index, { type })} />
-                  <div className="flex items-center justify-between gap-2">
+                  <CustomFieldInput id={`template-field-key-${index}`} label="Key" value={field.key} onChange={(value) => updateField(index, { key: value })} placeholder="key" />
+                  <CustomFieldInput id={`template-field-label-${index}`} label="Label" value={field.label} onChange={(value) => updateField(index, { label: value })} placeholder="label" />
+                  <CustomFieldInput id={`template-field-placeholder-${index}`} label="Placeholder" value={field.placeholder ?? ""} onChange={(value) => updateField(index, { placeholder: value })} placeholder="placeholder" />
+                  <div>
+                    <Label className="font-google-sans text-xs font-semibold text-muted-foreground">Type</Label>
+                    <FieldTypeDropdown value={field.type} onChange={(type) => updateField(index, { type })} />
+                  </div>
+                  <div className="flex items-end justify-between gap-2">
                     <label className="flex items-center gap-2 font-inter text-sm text-heading">
                       <Checkbox checked={field.required} onCheckedChange={(checked) => updateField(index, { required: checked === true })} />
                       Required
@@ -176,7 +179,7 @@ export function TemplateFormDialog({ mode, trigger, template, open: controlledOp
 
           <div>
             <Label className="font-google-sans text-sm font-semibold text-heading">HTML Content <span className="text-destructive">*</span></Label>
-            <Textarea value={form.contentHtml} onChange={(event) => update("contentHtml", event.target.value)} placeholder="<p>Hello {{brandName}},</p>" className="mt-2 min-h-44 font-mono text-sm" />
+            <Textarea value={form.contentHtml} onChange={(event) => update("contentHtml", event.target.value)} placeholder="<p>Hello {{key}},</p>" className="mt-2 min-h-44 font-mono text-sm" />
           </div>
 
           <label className="flex items-center gap-2 font-inter text-sm text-heading">
@@ -196,6 +199,14 @@ export function TemplateFormDialog({ mode, trigger, template, open: controlledOp
   );
 }
 
+function CustomFieldInput({ id, label, value, onChange, placeholder }: { id: string; label: string; value: string; onChange: (value: string) => void; placeholder: string }) {
+  return (
+    <div>
+      <Label htmlFor={id} className="font-google-sans text-xs font-semibold text-muted-foreground">{label}</Label>
+      <Input id={id} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="mt-2 h-10 rounded-sm bg-background font-inter text-sm" />
+    </div>
+  );
+}
 function TemplateInput({ id, label, placeholder, icon: Icon, value, onChange, required }: { id: string; label: string; placeholder: string; icon: React.ComponentType<{ className?: string }>; value: string; onChange: (value: string) => void; required?: boolean }) {
   return (
     <div>
