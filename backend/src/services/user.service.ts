@@ -117,6 +117,7 @@ export async function getProfile(userId: string): Promise<ProfileDto> {
     lastName: user.lastName,
     pseudoName: user.pseudoName,
     email: user.email,
+    role: mapRole(user.role),
   };
 }
 

@@ -61,6 +61,10 @@ export function DashboardHeader() {
   const profileImageStyle = currentUser.imageUrl
     ? { backgroundImage: `url(${currentUser.imageUrl})` }
     : undefined;
+  function handleOpenSettings() {
+    router.push("/settings");
+  }
+
   const logoutMutation = useMutation({
     mutationFn: logoutUser,
     onSettled: () => {
@@ -120,7 +124,7 @@ export function DashboardHeader() {
                 Manage your profile and workspace preferences.
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="font-google-sans cursor-pointer">
+              <DropdownMenuItem className="font-google-sans cursor-pointer" onSelect={handleOpenSettings}>
                 <Settings />
                 Settings
               </DropdownMenuItem>

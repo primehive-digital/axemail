@@ -19,6 +19,7 @@ export type ProfileDto = {
   lastName: string;
   pseudoName: string;
   email: string;
+  role: UserRole;
 };
 
 export type MailerQuotaDto = {

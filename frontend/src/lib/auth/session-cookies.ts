@@ -29,6 +29,12 @@ export async function setAuthCookies(session: AuthSession) {
   cookieStore.set(AUTH_COOKIE_NAMES.user, encodeAuthUser(session.user), secureCookieOptions);
 }
 
+export async function updateAuthUserCookie(user: AuthUser) {
+  const cookieStore = await cookies();
+
+  cookieStore.set(AUTH_COOKIE_NAMES.role, user.role, secureCookieOptions);
+  cookieStore.set(AUTH_COOKIE_NAMES.user, encodeAuthUser(user), secureCookieOptions);
+}
 export async function clearAuthCookies() {
   const cookieStore = await cookies();
 
