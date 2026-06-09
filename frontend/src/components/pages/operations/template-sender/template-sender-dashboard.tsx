@@ -47,7 +47,8 @@ export function TemplateSenderDashboard() {
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to send template mail."),
   });
-  const disabled = Boolean(query.isLoading || sendMutation.isPending || isCooldownActive || !isQuotaAvailable || !selectedTemplate || replyToOptions.length === 0);
+  const formDisabled = Boolean(query.isLoading || sendMutation.isPending || isCooldownActive || !isQuotaAvailable || !selectedTemplate);
+  const sendDisabled = Boolean(formDisabled || replyToOptions.length === 0);
 
   useEffect(() => {
     if (query.error) toast.error(query.error instanceof Error ? query.error.message : "Unable to load template sender capacity.");
@@ -78,6 +79,7 @@ export function TemplateSenderDashboard() {
     if (!selectedTemplate) return toast.error("Select an active template before sending.");
     if (!isQuotaAvailable) return toast.error("No remaining mailer allocation is available.");
     if (isCooldownActive) return toast.error("Please wait for the cooldown to finish before sending another template mail.");
+    if (!replyToOptions.length) return toast.error("Add an approved reply-to option before sending template mail.");
 
     const payload = buildPayload(new FormData(event.currentTarget), selectedTemplate, selectedMailer, replyToOptions);
     if (!payload) return;
@@ -103,13 +105,13 @@ export function TemplateSenderDashboard() {
       />
 
       <section className="grid grid-cols-1 gap-4">
-        <TemplateDetailsCard template={selectedTemplate} disabled={disabled} />
-        <DeliveryDetailsCard selectedMailer={selectedMailer} disabled={disabled} replyToOptions={replyToOptions} replyTo={selectedReplyTo} onReplyToChange={setReplyTo} />
+        <TemplateDetailsCard template={selectedTemplate} disabled={formDisabled} />
+        <DeliveryDetailsCard selectedMailer={selectedMailer} disabled={formDisabled} replyToOptions={replyToOptions} replyTo={selectedReplyTo} onReplyToChange={setReplyTo} />
 
         <div className="flex justify-end">
-          <Button disabled={disabled} className="h-10 rounded-full border-none bg-primary px-4 font-google-sans shadow-sm shadow-[#2e5fa2]/10 transition-all duration-200 ease-in-out hover:bg-primary-hover hover:shadow-md hover:shadow-[#2e5fa2]/20 disabled:cursor-not-allowed disabled:opacity-70">
+          <Button disabled={sendDisabled} className="h-10 rounded-full border-none bg-primary px-4 font-google-sans shadow-sm shadow-[#2e5fa2]/10 transition-all duration-200 ease-in-out hover:bg-primary-hover hover:shadow-md hover:shadow-[#2e5fa2]/20 disabled:cursor-not-allowed disabled:opacity-70">
             {sendMutation.isPending ? <LoaderCircle className="size-4 animate-spin" /> : <Send className="size-4" />}
-            {query.isLoading ? "Loading" : !isQuotaAvailable ? "No Allocation" : isCooldownActive ? "Cooldown Active" : sendMutation.isPending ? "Sending..." : "Send Mail"}
+            {query.isLoading ? "Loading" : !isQuotaAvailable ? "No Allocation" : isCooldownActive ? "Cooldown Active" : !replyToOptions.length ? "No Reply-To" : sendMutation.isPending ? "Sending..." : "Send Mail"}
           </Button>
         </div>
       </section>
@@ -164,6 +166,7 @@ function requiredValue(formData: FormData, key: string, label: string) {
 function validateEmailList(value: string) {
   return value.split(",").map((item) => item.trim()).filter(Boolean).every((email) => emailPattern.test(email));
 }
+
 
 
 

@@ -259,10 +259,11 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
   const [extension, setExtension] = useState<string>(maskEmailExtensions[0] ?? "gov");
   const [replyTo, setReplyTo] = useState("");
   const selectedReplyTo = replyToOptions.some((option) => option.email === replyTo) ? replyTo : replyToOptions[0]?.email ?? "";
-  const isDisabled = Boolean(isSending || isCooldownActive || isLoadingCapacity || !isQuotaAvailable || replyToOptions.length === 0);
+  const isFormDisabled = Boolean(isSending || isCooldownActive || isLoadingCapacity || !isQuotaAvailable);
+  const isSendDisabled = Boolean(isFormDisabled || replyToOptions.length === 0);
   const editor = useEditor({
     immediatelyRender: false,
-    editable: !isDisabled,
+    editable: !isFormDisabled,
     extensions: [
       StarterKit.configure({ heading: false }),
       TextStyle,
@@ -283,12 +284,12 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
   const selectedFontSize = (editor?.getAttributes("textStyle").fontSize as string | undefined) ?? "14px";
 
   useEffect(() => {
-    editor?.setEditable(!isDisabled);
-  }, [editor, isDisabled]);
+    editor?.setEditable(!isFormDisabled);
+  }, [editor, isFormDisabled]);
 
 
   function setLink() {
-    if (!editor || isDisabled) return;
+    if (!editor || isFormDisabled) return;
     const previousUrl = editor.getAttributes("link").href as string | undefined;
     const url = window.prompt("Enter link URL", previousUrl ?? "https://");
 
@@ -323,6 +324,10 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
     }
     if (!isQuotaAvailable) {
       toast.error("No remaining mailer allocation is available.");
+      return;
+    }
+    if (!replyToOptions.length) {
+      toast.error("Add an approved reply-to option before sending mail.");
       return;
     }
     if (!editor || !getEditorText(editor)) {
@@ -399,24 +404,24 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
       </CardHeader>
       <CardContent className="p-0">
         <form className="space-y-6 p-5" noValidate onSubmit={handleSubmit}>
-          <fieldset disabled={isDisabled} className="space-y-6 disabled:opacity-70">
+          <fieldset disabled={isFormDisabled} className="space-y-6 disabled:opacity-70">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {includeMaskFromEmail && <FromEmailField extension={extension} onExtensionChange={setExtension} disabled={isDisabled} />}
-              <ReplyToField options={replyToOptions} value={selectedReplyTo} onChange={setReplyTo} disabled={isDisabled} />
+              {includeMaskFromEmail && <FromEmailField extension={extension} onExtensionChange={setExtension} disabled={isFormDisabled} />}
+              <ReplyToField options={replyToOptions} value={selectedReplyTo} onChange={setReplyTo} disabled={isFormDisabled} />
               {composerFields.map((field) => (
                 <div key={field.id} className={cn(field.id === "subject" && "md:col-span-2 xl:col-span-3")}>
                   <ComposerLabel htmlFor={field.id} required={field.required}>{field.label}</ComposerLabel>
                   <div className="relative mt-2">
                     <field.icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input id={field.id} name={field.id} type={field.type ?? "text"} placeholder={field.placeholder} disabled={isDisabled} className="h-11 rounded-sm bg-background pl-10 font-inter text-sm shadow-none focus-visible:ring-2 focus-visible:ring-ring" />
+                    <Input id={field.id} name={field.id} type={field.type ?? "text"} placeholder={field.placeholder} disabled={isFormDisabled} className="h-11 rounded-sm bg-background pl-10 font-inter text-sm shadow-none focus-visible:ring-2 focus-visible:ring-ring" />
                   </div>
                 </div>
               ))}
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <UploadBox title="Attachment" description="Upload files to include with your email." icon={Paperclip} inputName="attachments" disabled={isDisabled} inputRef={attachmentsInputRef} />
-              <UploadBox title="Signature Image or Attachment" description="Upload a signature image or supporting signature file." icon={Signature} inputName="signature-attachments" disabled={isDisabled} inputRef={signatureInputRef} />
+              <UploadBox title="Attachment" description="Upload files to include with your email." icon={Paperclip} inputName="attachments" disabled={isFormDisabled} inputRef={attachmentsInputRef} />
+              <UploadBox title="Signature Image or Attachment" description="Upload a signature image or supporting signature file." icon={Signature} inputName="signature-attachments" disabled={isFormDisabled} inputRef={signatureInputRef} />
             </div>
 
             <div>
@@ -425,7 +430,7 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
                 <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button type="button" variant="outline" disabled={isDisabled} className="h-11 min-w-40 justify-between rounded-2xl bg-card px-4 font-inter font-normal">
+                      <Button type="button" variant="outline" disabled={isFormDisabled} className="h-11 min-w-40 justify-between rounded-2xl bg-card px-4 font-inter font-normal">
                         {selectedFontFamily}
                         <ChevronDown className="size-4 text-muted-foreground" />
                       </Button>
@@ -441,7 +446,7 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
                   </DropdownMenu>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button type="button" variant="outline" disabled={isDisabled} className="h-11 min-w-28 justify-between rounded-2xl bg-card px-4 font-inter font-normal">
+                      <Button type="button" variant="outline" disabled={isFormDisabled} className="h-11 min-w-28 justify-between rounded-2xl bg-card px-4 font-inter font-normal">
                         {selectedFontSize}
                         <ChevronDown className="size-4 text-muted-foreground" />
                       </Button>
@@ -455,17 +460,17 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <ToolbarButton label="Bold" disabled={isDisabled} active={editor?.isActive("bold")} onClick={() => editor?.chain().focus().toggleBold().run()}><Bold className="size-4" /></ToolbarButton>
-                  <ToolbarButton label="Italic" disabled={isDisabled} active={editor?.isActive("italic")} onClick={() => editor?.chain().focus().toggleItalic().run()}><Italic className="size-4" /></ToolbarButton>
-                  <ToolbarButton label="Underline" disabled={isDisabled} active={editor?.isActive("underline")} onClick={() => editor?.chain().focus().toggleUnderline().run()}><UnderlineIcon className="size-4" /></ToolbarButton>
-                  <ToolbarButton label="Align left" disabled={isDisabled} active={editor?.isActive({ textAlign: "left" })} onClick={() => editor?.chain().focus().setTextAlign("left").run()}><AlignLeft className="size-4" /></ToolbarButton>
-                  <ToolbarButton label="Align center" disabled={isDisabled} active={editor?.isActive({ textAlign: "center" })} onClick={() => editor?.chain().focus().setTextAlign("center").run()}><AlignCenter className="size-4" /></ToolbarButton>
-                  <ToolbarButton label="Align right" disabled={isDisabled} active={editor?.isActive({ textAlign: "right" })} onClick={() => editor?.chain().focus().setTextAlign("right").run()}><AlignRight className="size-4" /></ToolbarButton>
-                  <ToolbarButton label="Bullet list" disabled={isDisabled} active={editor?.isActive("bulletList")} onClick={() => editor?.chain().focus().toggleBulletList().run()}><List className="size-4" /></ToolbarButton>
-                  <ToolbarButton label="Ordered list" disabled={isDisabled} active={editor?.isActive("orderedList")} onClick={() => editor?.chain().focus().toggleOrderedList().run()}><ListOrdered className="size-4" /></ToolbarButton>
-                  <ToolbarButton label="Link" disabled={isDisabled} active={editor?.isActive("link")} onClick={setLink}><LinkIcon className="size-4" /></ToolbarButton>
+                  <ToolbarButton label="Bold" disabled={isFormDisabled} active={editor?.isActive("bold")} onClick={() => editor?.chain().focus().toggleBold().run()}><Bold className="size-4" /></ToolbarButton>
+                  <ToolbarButton label="Italic" disabled={isFormDisabled} active={editor?.isActive("italic")} onClick={() => editor?.chain().focus().toggleItalic().run()}><Italic className="size-4" /></ToolbarButton>
+                  <ToolbarButton label="Underline" disabled={isFormDisabled} active={editor?.isActive("underline")} onClick={() => editor?.chain().focus().toggleUnderline().run()}><UnderlineIcon className="size-4" /></ToolbarButton>
+                  <ToolbarButton label="Align left" disabled={isFormDisabled} active={editor?.isActive({ textAlign: "left" })} onClick={() => editor?.chain().focus().setTextAlign("left").run()}><AlignLeft className="size-4" /></ToolbarButton>
+                  <ToolbarButton label="Align center" disabled={isFormDisabled} active={editor?.isActive({ textAlign: "center" })} onClick={() => editor?.chain().focus().setTextAlign("center").run()}><AlignCenter className="size-4" /></ToolbarButton>
+                  <ToolbarButton label="Align right" disabled={isFormDisabled} active={editor?.isActive({ textAlign: "right" })} onClick={() => editor?.chain().focus().setTextAlign("right").run()}><AlignRight className="size-4" /></ToolbarButton>
+                  <ToolbarButton label="Bullet list" disabled={isFormDisabled} active={editor?.isActive("bulletList")} onClick={() => editor?.chain().focus().toggleBulletList().run()}><List className="size-4" /></ToolbarButton>
+                  <ToolbarButton label="Ordered list" disabled={isFormDisabled} active={editor?.isActive("orderedList")} onClick={() => editor?.chain().focus().toggleOrderedList().run()}><ListOrdered className="size-4" /></ToolbarButton>
+                  <ToolbarButton label="Link" disabled={isFormDisabled} active={editor?.isActive("link")} onClick={setLink}><LinkIcon className="size-4" /></ToolbarButton>
                 </div>
-                <div className={cn(isDisabled && "pointer-events-none opacity-60")}>
+                <div className={cn(isFormDisabled && "pointer-events-none opacity-60")}>
                   <EditorContent editor={editor} />
                 </div>
               </div>
@@ -473,9 +478,9 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
           </fieldset>
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={isDisabled} className="h-10 rounded-full border-none px-4 font-google-sans shadow-sm shadow-[#2e5fa2]/10 transition-all duration-200 ease-in-out hover:shadow-md hover:shadow-[#2e5fa2]/20 disabled:cursor-not-allowed disabled:opacity-70">
+            <Button type="submit" disabled={isSendDisabled} className="h-10 rounded-full border-none px-4 font-google-sans shadow-sm shadow-[#2e5fa2]/10 transition-all duration-200 ease-in-out hover:shadow-md hover:shadow-[#2e5fa2]/20 disabled:cursor-not-allowed disabled:opacity-70">
               {isSending ? <LoaderCircle className="size-4 animate-spin" /> : <Send className="size-4" />}
-              {isLoadingCapacity ? "Loading Capacity" : !isQuotaAvailable ? "No Allocation" : isCooldownActive ? "Cooldown Active" : isSending ? "Sending" : "Send Mail"}
+              {isLoadingCapacity ? "Loading Capacity" : !isQuotaAvailable ? "No Allocation" : isCooldownActive ? "Cooldown Active" : !replyToOptions.length ? "No Reply-To" : isSending ? "Sending" : "Send Mail"}
             </Button>
           </div>
         </form>
@@ -483,6 +488,8 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
     </Card>
   );
 }
+
+
 
 
 
