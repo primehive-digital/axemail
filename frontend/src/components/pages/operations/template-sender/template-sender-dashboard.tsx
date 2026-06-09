@@ -23,7 +23,7 @@ export function TemplateSenderDashboard() {
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const [replyTo, setReplyTo] = useState("");
   const queryKey = ["template-sender-dashboard", selectedMailer];
-  const query = useQuery({ queryKey, queryFn: () => getTemplateSenderDashboard(selectedMailer) });
+  const query = useQuery({ queryKey, queryFn: () => getTemplateSenderDashboard(selectedMailer), refetchOnMount: "always", staleTime: 0 });
   const templates = useMemo(() => query.data?.templates ?? [], [query.data?.templates]);
   const activeTemplateId = selectedTemplateId && templates.some((template) => template.id === selectedTemplateId) ? selectedTemplateId : templates[0]?.id ?? "";
   const selectedTemplate = useMemo(() => templates.find((template) => template.id === activeTemplateId), [activeTemplateId, templates]);
@@ -48,6 +48,10 @@ export function TemplateSenderDashboard() {
     onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to send template mail."),
   });
   const disabled = Boolean(query.isLoading || sendMutation.isPending || isCooldownActive || !isQuotaAvailable || !selectedTemplate || replyToOptions.length === 0);
+
+  useEffect(() => {
+    if (query.error) toast.error(query.error instanceof Error ? query.error.message : "Unable to load template sender capacity.");
+  }, [query.error]);
 
 
   useEffect(() => {
@@ -77,7 +81,11 @@ export function TemplateSenderDashboard() {
 
     const payload = buildPayload(new FormData(event.currentTarget), selectedTemplate, selectedMailer, replyToOptions);
     if (!payload) return;
-    await sendMutation.mutateAsync(payload);
+    try {
+      await sendMutation.mutateAsync(payload);
+    } catch {
+      return;
+    }
   }
 
   return (
@@ -156,6 +164,8 @@ function requiredValue(formData: FormData, key: string, label: string) {
 function validateEmailList(value: string) {
   return value.split(",").map((item) => item.trim()).filter(Boolean).every((email) => emailPattern.test(email));
 }
+
+
 
 
 

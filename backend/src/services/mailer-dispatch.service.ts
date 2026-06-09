@@ -1,4 +1,4 @@
-import axios from "axios";
+﻿import axios from "axios";
 import nodemailer from "nodemailer";
 import { MailerType } from "@prisma/client";
 
@@ -44,7 +44,7 @@ export async function dispatchMessage(
     }
 
     const response = await axios.post(
-      env.MASK_MAILER_API_URL,
+      env.MASK_MAILER_SEND_URL,
       formData,
       {
         timeout: 30000,
@@ -106,3 +106,4 @@ export async function dispatchMessage(
     response: result.response,
   };
 }
+

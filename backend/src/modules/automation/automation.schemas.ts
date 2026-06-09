@@ -1,8 +1,9 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 
 import { toPrismaMailerType } from "@/utils/enum-mappers";
 
 const mailerTypeSchema = z.enum(["gmail", "domain", "mask"]).transform(toPrismaMailerType);
+const maskEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
 const workerStatusSchema = z.enum(["working", "paused"]);
 
 const automationWorkerBaseSchema = z.object({
@@ -16,7 +17,7 @@ const automationLeadBaseSchema = z.object({
   templateId: z.string().min(1),
   mailerType: mailerTypeSchema,
   fromName: z.string().trim().min(1).max(120),
-  fromEmail: z.string().trim().email().optional(),
+  fromEmail: z.string().trim().optional(),
   replyTo: z.string().trim().email(),
   subject: z.string().trim().max(240).optional(),
   previewText: z.string().trim().max(240).optional(),
@@ -56,3 +57,5 @@ export const updateAutomationLeadSchema = automationLeadBaseSchema.partial().ref
 export const processAutomationWorkerSchema = z.object({
   limit: z.coerce.number().int().min(1).max(25).default(10),
 });
+
+

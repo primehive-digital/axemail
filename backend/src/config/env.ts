@@ -1,4 +1,4 @@
-import { config } from "dotenv";
+﻿import { config } from "dotenv";
 import { z } from "zod";
 
 config();
@@ -35,6 +35,7 @@ if (!parsed.success) {
 
 export const env = {
   ...parsed.data,
+  MASK_MAILER_SEND_URL: resolveMaskMailerSendUrl(parsed.data.MASK_MAILER_API_URL),
   MASK_MAILER_HEALTHCHECK_URL:
     parsed.data.MASK_MAILER_HEALTHCHECK_URL ??
     new URL("/health", parsed.data.MASK_MAILER_API_URL).toString(),
@@ -45,3 +46,14 @@ export const env = {
     .map((value) => Number(value.trim()))
     .filter((value) => Number.isFinite(value) && value > 0),
 };
+function resolveMaskMailerSendUrl(apiUrl: string) {
+  const url = new URL(apiUrl);
+  const normalizedPath = url.pathname.replace(/\/+$/u, "");
+
+  if (!normalizedPath) {
+    url.pathname = "/send";
+  }
+
+  return url.toString();
+}
+

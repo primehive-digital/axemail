@@ -1,5 +1,6 @@
-"use client";
+﻿"use client";
 
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
@@ -13,8 +14,11 @@ const queryKey = ["outreach-mailer-status", mailerType];
 
 export function MaskMailerDashboard() {
   const queryClient = useQueryClient();
-  const query = useQuery({ queryKey, queryFn: () => getMailerStatus(mailerType) });
+  const query = useQuery({ queryKey, queryFn: () => getMailerStatus(mailerType), refetchOnMount: "always", staleTime: 0 });
   const isQuotaAvailable = Boolean(query.data && query.data.capacity.allotted > 0 && query.data.capacity.remaining > 0);
+  useEffect(() => {
+    if (query.error) toast.error(query.error instanceof Error ? query.error.message : "Unable to load mailer capacity.");
+  }, [query.error]);
   const sendMutation = useMutation({
     mutationFn: async (input: MailerSendPayload) => {
       const result = await sendMailerMessage(mailerType, input);
@@ -49,4 +53,8 @@ export function MaskMailerDashboard() {
     </div>
   );
 }
+
+
+
+
 

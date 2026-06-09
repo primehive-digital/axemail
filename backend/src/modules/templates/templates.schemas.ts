@@ -1,8 +1,9 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 
 import { toPrismaMailerType } from "@/utils/enum-mappers";
 
 const mailerTypeSchema = z.enum(["gmail", "domain", "mask"]).transform(toPrismaMailerType);
+const maskEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
 
 export const templateIdSchema = z.object({
   templateId: z.string().min(1),
@@ -37,13 +38,25 @@ export const templateSenderQuerySchema = z.object({
   mailerType: mailerTypeSchema,
 });
 
-export const sendTemplateSchema = z.object({
+const sendTemplateBaseSchema = z.object({
   templateId: z.string().min(1),
   mailerType: mailerTypeSchema,
   fromName: z.string().trim().min(1),
-  fromEmail: z.string().trim().email().optional(),
+  fromEmail: z.string().trim().optional(),
   to: z.string().trim().min(1),
   replyTo: z.string().trim().email(),
   previewText: z.string().trim().optional(),
   templateValues: z.record(z.string(), z.string().trim()).default({}),
+});
+
+
+export const sendTemplateSchema = sendTemplateBaseSchema.superRefine((value, context) => {
+  if (value.mailerType === "MASK" && !value.fromEmail) {
+    context.addIssue({ code: "custom", message: "From email is required for mask mailer.", path: ["fromEmail"] });
+    return;
+  }
+
+  if (value.fromEmail && !maskEmailRegex.test(value.fromEmail)) {
+    context.addIssue({ code: "custom", message: "Invalid mask from email address.", path: ["fromEmail"] });
+  }
 });

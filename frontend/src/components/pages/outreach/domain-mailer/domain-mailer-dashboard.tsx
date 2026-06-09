@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,9 +15,13 @@ const queryKey = ["outreach-mailer-status", mailerType];
 export function DomainMailerDashboard() {
   const queryClient = useQueryClient();
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
-  const query = useQuery({ queryKey, queryFn: () => getMailerStatus(mailerType) });
+  const query = useQuery({ queryKey, queryFn: () => getMailerStatus(mailerType), refetchOnMount: "always", staleTime: 0 });
   const cooldownSeconds = query.data?.cooldown.secondsRemaining ?? 0;
   const isQuotaAvailable = Boolean(query.data && query.data.capacity.allotted > 0 && query.data.capacity.remaining > 0);
+  useEffect(() => {
+    if (query.error) toast.error(query.error instanceof Error ? query.error.message : "Unable to load mailer capacity.");
+  }, [query.error]);
+
   const sendMutation = useMutation({
     mutationFn: async (input: MailerSendPayload) => {
       const result = await sendMailerMessage(mailerType, input);
@@ -71,4 +75,5 @@ export function DomainMailerDashboard() {
     </div>
   );
 }
+
 
