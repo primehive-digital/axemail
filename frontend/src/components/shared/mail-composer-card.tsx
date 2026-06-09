@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState, type ComponentType, type FormEvent, type ReactNode, type Ref } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
@@ -39,7 +39,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MASK_MAILER_FROM_EMAIL_EXT } from "@/constants/enum";
-import type { MailerSendPayload } from "@/lib/outreach/outreach-api";
+import type { MailerSendPayload, ReplyToOption } from "@/lib/outreach/outreach-api";
 import { cn } from "@/lib/utils";
 
 const fontFamilies = ["Arial", "Helvetica", "Georgia", "Times New Roman", "Verdana"];
@@ -68,6 +68,7 @@ type MailComposerCardProps = {
   isCooldownActive?: boolean;
   isQuotaAvailable?: boolean;
   isLoadingCapacity?: boolean;
+  replyToOptions?: ReplyToOption[];
 };
 
 type UploadBoxProps = {
@@ -83,7 +84,6 @@ const composerFields: ComposerField[] = [
   { id: "from-name", label: "From Name", required: true, placeholder: "Axemail Campaign Team", icon: User },
   { id: "preview-text", label: "Preview Text", placeholder: "Short inbox preview shown before opening", icon: Eye },
   { id: "to", label: "To", required: true, type: "email", placeholder: "recipient@company.com", icon: Send },
-  { id: "reply-to", label: "Reply To", required: true, type: "email", placeholder: "reply@yourdomain.com", icon: Reply },
   { id: "cc", label: "CC", type: "email", placeholder: "cc@company.com", icon: Users },
   { id: "bcc", label: "BCC", type: "email", placeholder: "bcc@company.com", icon: Users },
   { id: "subject", label: "Subject", required: true, placeholder: "Write a clear email subject", icon: Sparkles },
@@ -122,6 +122,39 @@ function ToolbarButton({ active, children, onClick, label, disabled }: { active?
     <Button type="button" variant="outline" size="icon" aria-label={label} disabled={disabled} onClick={onClick} className={cn("size-11 rounded-full border-border bg-card text-heading shadow-none hover:bg-secondary", active && "bg-accent text-accent-foreground")}>
       {children}
     </Button>
+  );
+}
+
+function ReplyToField({ options, value, onChange, disabled }: { options: ReplyToOption[]; value: string; onChange: (value: string) => void; disabled?: boolean }) {
+  const selectedOption = options.find((option) => option.email === value);
+
+  return (
+    <div>
+      <ComposerLabel htmlFor="reply-to" required>Reply To</ComposerLabel>
+      <input id="reply-to" type="hidden" name="reply-to" value={value} />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button type="button" variant="outline" disabled={disabled || options.length === 0} className="mt-2 h-11 w-full justify-between rounded-sm bg-background px-4 font-inter font-normal">
+            <span className="flex min-w-0 items-center gap-2">
+              <Reply className="size-4 shrink-0 text-muted-foreground" />
+              <span className="truncate">{selectedOption ? `${selectedOption.label} - ${selectedOption.email}` : options.length ? "Select reply-to" : "No reply-to options"}</span>
+            </span>
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-(--radix-dropdown-menu-trigger-width)">
+          {options.map((option) => (
+            <DropdownMenuItem key={option.id} onSelect={() => onChange(option.email)} className="font-inter">
+              <span className="grid w-4 place-items-center">{value === option.email && <Check className="size-4" />}</span>
+              <span className="min-w-0">
+                <span className="block truncate font-medium">{option.label}</span>
+                <span className="block truncate text-xs text-muted-foreground">{option.email}</span>
+              </span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }
 
@@ -220,11 +253,13 @@ function getEditorText(editor: Editor) {
   return editor.getText().replace(/\u00a0/g, " ").trim();
 }
 
-export function MailComposerCard({ title, description, includeMaskFromEmail, onSend, isSending, isCooldownActive, isQuotaAvailable = true, isLoadingCapacity }: MailComposerCardProps) {
+export function MailComposerCard({ title, description, includeMaskFromEmail, onSend, isSending, isCooldownActive, isQuotaAvailable = true, isLoadingCapacity, replyToOptions = [] }: MailComposerCardProps) {
   const attachmentsInputRef = useRef<HTMLInputElement>(null);
   const signatureInputRef = useRef<HTMLInputElement>(null);
   const [extension, setExtension] = useState<string>(maskEmailExtensions[0] ?? "gov");
-  const isDisabled = Boolean(isSending || isCooldownActive || isLoadingCapacity || !isQuotaAvailable);
+  const [replyTo, setReplyTo] = useState("");
+  const selectedReplyTo = replyToOptions.some((option) => option.email === replyTo) ? replyTo : replyToOptions[0]?.email ?? "";
+  const isDisabled = Boolean(isSending || isCooldownActive || isLoadingCapacity || !isQuotaAvailable || replyToOptions.length === 0);
   const editor = useEditor({
     immediatelyRender: false,
     editable: !isDisabled,
@@ -250,6 +285,7 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
   useEffect(() => {
     editor?.setEditable(!isDisabled);
   }, [editor, isDisabled]);
+
 
   function setLink() {
     if (!editor || isDisabled) return;
@@ -298,19 +334,19 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
     const formData = new FormData(form);
     const fromName = getRequiredValue(formData, "from-name", "From Name");
     const to = getRequiredValue(formData, "to", "To");
-    const replyTo = getRequiredValue(formData, "reply-to", "Reply To");
+    const selectedReplyTo = getRequiredValue(formData, "reply-to", "Reply To");
     const subject = getRequiredValue(formData, "subject", "Subject");
     const fromEmailName = String(formData.get("from-email-name") ?? "").trim();
     const cc = String(formData.get("cc") ?? "").trim();
     const bcc = String(formData.get("bcc") ?? "").trim();
 
-    if (!fromName || !to || !replyTo || !subject) return;
+    if (!fromName || !to || !selectedReplyTo || !subject) return;
     if (!validateEmailList(to)) {
       toast.error("Enter valid recipient email addresses.");
       return;
     }
-    if (!emailPattern.test(replyTo)) {
-      toast.error("Enter a valid reply-to email address.");
+    if (!replyToOptions.some((option) => option.email === selectedReplyTo)) {
+      toast.error("Select an approved reply-to email.");
       return;
     }
     if (cc && !validateEmailList(cc)) {
@@ -339,7 +375,7 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
         fromName,
         previewText: String(formData.get("preview-text") ?? "").trim(),
         to,
-        replyTo,
+        replyTo: selectedReplyTo,
         cc,
         bcc,
         subject,
@@ -366,6 +402,7 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
           <fieldset disabled={isDisabled} className="space-y-6 disabled:opacity-70">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {includeMaskFromEmail && <FromEmailField extension={extension} onExtensionChange={setExtension} disabled={isDisabled} />}
+              <ReplyToField options={replyToOptions} value={selectedReplyTo} onChange={setReplyTo} disabled={isDisabled} />
               {composerFields.map((field) => (
                 <div key={field.id} className={cn(field.id === "subject" && "md:col-span-2 xl:col-span-3")}>
                   <ComposerLabel htmlFor={field.id} required={field.required}>{field.label}</ComposerLabel>
@@ -446,3 +483,10 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
     </Card>
   );
 }
+
+
+
+
+
+
+

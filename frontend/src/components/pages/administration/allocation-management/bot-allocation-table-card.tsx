@@ -27,12 +27,14 @@ export function BotAllocationTableCard({
   bots,
   onAssignAllocation,
   isAssigning,
+  isLoading,
 }: {
   pools: AllocationPool[];
   rows: AllocationRow[];
   bots: AllocationUser[];
   onAssignAllocation: (input: AssignAllocationPayload) => Promise<unknown> | void;
   isAssigning?: boolean;
+  isLoading?: boolean;
 }) {
   const [page, setPage] = useState(1);
   const pageCount = Math.max(Math.ceil(rows.length / rowsPerPage), 1);
@@ -47,8 +49,8 @@ export function BotAllocationTableCard({
       <CardHeader className="border-b px-5 py-4 pt-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-google-sans text-xl font-semibold text-heading">Bot Allocation Table</h2>
-            <p className="font-inter text-sm text-muted-foreground">Review assigned daily mailer limits to automation bots.</p>
+            <h2 className="font-google-sans text-xl font-semibold text-heading">Worker Allocation Table</h2>
+            <p className="font-inter text-sm text-muted-foreground">Review assigned daily mailer limits to automation workers.</p>
           </div>
 
           <BotAllocationLimitDialog pools={pools} bots={bots} rows={rows} onSubmit={onAssignAllocation} isPending={isAssigning} />
@@ -60,7 +62,7 @@ export function BotAllocationTableCard({
           <table className="w-full min-w-215 border-collapse">
             <thead>
               <tr className="border-b border-border bg-secondary/60">
-                <th className="px-5 py-4 text-left font-google-sans text-xs font-semibold uppercase tracking-wide text-muted-foreground">Bot</th>
+                <th className="px-5 py-4 text-left font-google-sans text-xs font-semibold uppercase tracking-wide text-muted-foreground">Worker</th>
                 <th className="px-5 py-4 text-left font-google-sans text-xs font-semibold uppercase tracking-wide text-muted-foreground">Gmail Allocation</th>
                 <th className="px-5 py-4 text-left font-google-sans text-xs font-semibold uppercase tracking-wide text-muted-foreground">Domain Allocation</th>
                 <th className="px-5 py-4 text-left font-google-sans text-xs font-semibold uppercase tracking-wide text-muted-foreground">Mask Allocation</th>
@@ -68,8 +70,10 @@ export function BotAllocationTableCard({
               </tr>
             </thead>
             <tbody>
-              {visibleAllocations.length === 0 ? (
-                <EmptyRows message="No bot allocations found." />
+              {isLoading ? (
+                <EmptyRows message="Loading worker allocations..." />
+              ) : visibleAllocations.length === 0 ? (
+                <EmptyRows message="No worker allocations found." />
               ) : (
                 visibleAllocations.map((row) => (
                   <tr key={row.user.id} className="border-b border-border transition-colors last:border-b-0 hover:bg-secondary/40">
@@ -114,3 +118,4 @@ export function BotAllocationTableCard({
     </Card>
   );
 }
+

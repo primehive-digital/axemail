@@ -42,14 +42,7 @@ export function TemplateGovernanceDashboard() {
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to delete template."),
   });
-  const metrics = useMemo(() => {
-    const templates = query.data ?? [];
-    return {
-      total: templates.length,
-      active: templates.filter((template) => template.isActive).length,
-      inactive: templates.filter((template) => !template.isActive).length,
-    };
-  }, [query.data]);
+  const metrics = useMemo(() => ({ total: (query.data ?? []).length }), [query.data]);
 
   return (
     <main className="flex flex-1 flex-col gap-12 bg-background p-4 sm:p-6">
@@ -77,10 +70,8 @@ export function TemplateGovernanceDashboard() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="">
         <MetricCard title="Total Templates" value={metrics.total} label="Managed" />
-        <MetricCard title="Active Templates" value={metrics.active} label="Available" />
-        <MetricCard title="Inactive Templates" value={metrics.inactive} label="Paused" />
       </section>
 
       <TemplatesTableCard
@@ -120,3 +111,4 @@ function MetricCard({ title, value, label }: { title: string; value: number; lab
     </div>
   );
 }
+

@@ -66,7 +66,9 @@ export function GmailMailerDashboard() {
         isCooldownActive={cooldownRemaining > 0}
         isQuotaAvailable={isQuotaAvailable}
         isLoadingCapacity={query.isLoading}
+        replyToOptions={query.data?.replyToOptions ?? []}
       />
     </div>
   );
 }
+

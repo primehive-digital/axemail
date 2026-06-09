@@ -1,19 +1,35 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { UserRound } from "lucide-react";
+import { Medal, Trophy, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import type { OverviewLeaderboard, OverviewLeaderboardEmployee } from "@/lib/overview/overview-api";
 import { cn } from "@/lib/utils";
 
-import { behindEmployees, leaderboardModeMeta, topEmployees, type OverviewLeaderboardEmployee } from "./overview-insights-data";
+type LeaderboardMode = "leaders" | "behind";
 
-type LeaderboardMode = "top" | "behind";
+const leaderboardModeMeta = {
+  leaders: {
+    icon: Trophy,
+    title: "Employee Leaders",
+    description: "Top quota completion today.",
+    tabLabel: "Leaders",
+    empty: "No employee has sent mail today. Leaders will appear after the first successful delivery.",
+  },
+  behind: {
+    icon: Medal,
+    title: "Wall of Shame",
+    description: "Employees currently behind target.",
+    tabLabel: "Shame",
+    empty: "No behind-target employees to show yet. This updates after today's sending activity starts.",
+  },
+} as const;
 
-export function OverviewLeaderboardCard() {
-  const [mode, setMode] = useState<LeaderboardMode>("top");
-  const rows = useMemo(() => (mode === "top" ? topEmployees : behindEmployees), [mode]);
+export function OverviewLeaderboardCard({ leaderboard }: { leaderboard?: OverviewLeaderboard }) {
+  const [mode, setMode] = useState<LeaderboardMode>("leaders");
+  const rows = useMemo(() => (mode === "leaders" ? leaderboard?.leaders ?? [] : leaderboard?.behind ?? []), [leaderboard, mode]);
   const meta = leaderboardModeMeta[mode];
   const HeaderIcon = meta.icon;
 
@@ -25,23 +41,27 @@ export function OverviewLeaderboardCard() {
             <h2 className="font-google-sans text-xl font-semibold text-heading">{meta.title}</h2>
             <p className="font-inter text-sm text-muted-foreground">{meta.description}</p>
           </div>
-          <span className={cn("grid size-11 shrink-0 place-items-center rounded-xl border", mode === "top" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700")}>
+          <span className={cn("grid size-11 shrink-0 place-items-center rounded-xl border", mode === "leaders" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700")}>
             <HeaderIcon className="size-5" />
           </span>
         </div>
         <div className="mt-4 grid grid-cols-2 rounded-full border border-border bg-secondary p-1">
-          <Button type="button" variant="ghost" size="sm" onClick={() => setMode("top")} className={cn("h-9 rounded-full font-google-sans", mode === "top" && "bg-card text-heading shadow-sm shadow-black/5 hover:bg-card")}>
-            Good
+          <Button type="button" variant="ghost" size="sm" onClick={() => setMode("leaders")} className={cn("h-9 rounded-full font-google-sans", mode === "leaders" && "bg-card text-heading shadow-sm shadow-black/5 hover:bg-card")}>
+            Leaders
           </Button>
           <Button type="button" variant="ghost" size="sm" onClick={() => setMode("behind")} className={cn("h-9 rounded-full font-google-sans", mode === "behind" && "bg-card text-heading shadow-sm shadow-black/5 hover:bg-card")}>
-            Shame
+            Wall of Shame
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 p-5">
-        {rows.map((employee, index) => (
-          <EmployeeRankRow key={employee.id} employee={employee} rank={index + 1} mode={mode} />
-        ))}
+      <CardContent className="min-h-80 space-y-3 p-5">
+        {rows.length === 0 ? (
+          <div className="flex min-h-62 items-center justify-center rounded-xl border border-dashed border-border bg-secondary/40 px-5 text-center font-inter text-sm leading-6 text-muted-foreground">
+            {meta.empty}
+          </div>
+        ) : (
+          rows.map((employee, index) => <EmployeeRankRow key={employee.id} employee={employee} rank={index + 1} mode={mode} />)
+        )}
       </CardContent>
     </Card>
   );
@@ -51,7 +71,7 @@ function EmployeeRankRow({ employee, rank, mode }: { employee: OverviewLeaderboa
   return (
     <div className="rounded-xl border border-border bg-secondary/50 p-3 transition-colors hover:bg-secondary">
       <div className="flex items-center gap-3">
-        <span className={cn("grid size-9 shrink-0 place-items-center rounded-full font-google-sans text-sm font-semibold text-white", mode === "top" ? "bg-emerald-600" : "bg-red-500")}>
+        <span className={cn("grid size-9 shrink-0 place-items-center rounded-full font-google-sans text-sm font-semibold text-white", mode === "leaders" ? "bg-emerald-600" : "bg-red-500")}>
           {rank}
         </span>
         <span className="grid size-10 shrink-0 place-items-center rounded-full border border-border bg-card text-heading">
@@ -64,7 +84,7 @@ function EmployeeRankRow({ employee, rank, mode }: { employee: OverviewLeaderboa
       </div>
       <div className="mt-3 flex items-center justify-between gap-3">
         <div className="h-2 flex-1 overflow-hidden rounded-full bg-card">
-          <span className={cn("block h-full rounded-full", mode === "top" ? "bg-emerald-500" : "bg-red-400")} style={{ width: `${employee.progress}%` }} />
+          <span className={cn("block h-full rounded-full", mode === "leaders" ? "bg-emerald-500" : "bg-red-400")} style={{ width: `${employee.progress}%` }} />
         </div>
         <span className="font-inter text-xs font-semibold text-heading">{employee.completed}/{employee.target}</span>
       </div>

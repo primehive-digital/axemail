@@ -8,7 +8,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { EmailTemplate } from "@/lib/templates/templates-api";
-import { cn } from "@/lib/utils";
 
 const pageSize = 5;
 
@@ -33,15 +32,13 @@ export function TemplatesTableCard({ templates, isLoading, onEdit, onDelete, del
                 <th className="px-5 py-4">Template</th>
                 <th className="px-5 py-4">Template ID</th>
                 <th className="px-5 py-4">Mailers</th>
-                <th className="px-5 py-4">Fields</th>
-                <th className="px-5 py-4">Status</th>
                 <th className="px-5 py-4">Actions</th>
               </tr>
             </thead>
             <tbody className="h-[340px] align-top">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-16 text-center">
+                  <td colSpan={4} className="px-5 py-16 text-center">
                     <span className="inline-flex items-center gap-2 font-inter text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" /> Loading templates...</span>
                   </td>
                 </tr>
@@ -53,7 +50,6 @@ export function TemplatesTableCard({ templates, isLoading, onEdit, onDelete, del
                         <span className="grid size-10 shrink-0 place-items-center rounded-full border border-border bg-secondary text-heading"><FileText className="size-4" /></span>
                         <div className="min-w-0">
                           <p className="truncate font-google-sans text-sm font-semibold text-heading">{template.name}</p>
-                          <p className="max-w-sm truncate font-inter text-xs text-muted-foreground">{template.description || template.subject}</p>
                         </div>
                       </div>
                     </td>
@@ -65,8 +61,6 @@ export function TemplatesTableCard({ templates, isLoading, onEdit, onDelete, del
                         {template.supportedMailers.map((mailer) => <MailerBadge key={mailer}>{mailer}</MailerBadge>)}
                       </div>
                     </td>
-                    <td className="px-5 py-4 font-inter text-sm text-heading">{template.fields.length}</td>
-                    <td className="px-5 py-4"><StatusBadge active={template.isActive} /></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
                         <Button type="button" size="icon" onClick={() => onEdit(template)} className="size-9 rounded-full border-none bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 transition-all hover:bg-emerald-500 hover:shadow-md"><Edit3 className="size-4" /></Button>
@@ -77,7 +71,7 @@ export function TemplatesTableCard({ templates, isLoading, onEdit, onDelete, del
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-5 py-16 text-center font-inter text-sm text-muted-foreground">No templates found.</td>
+                  <td colSpan={4} className="px-5 py-16 text-center font-inter text-sm text-muted-foreground">No templates found.</td>
                 </tr>
               )}
             </tbody>
@@ -136,6 +130,4 @@ function MailerBadge({ children }: { children: string }) {
   return <span className="rounded-full bg-secondary px-3 py-1 font-google-sans text-xs font-semibold capitalize text-heading">{children}</span>;
 }
 
-function StatusBadge({ active }: { active: boolean }) {
-  return <span className={cn("rounded-full px-3 py-1 font-google-sans text-xs font-semibold", active ? "bg-emerald-50 text-emerald-700" : "bg-yellow-50 text-yellow-700")}>{active ? "Active" : "Inactive"}</span>;
-}
+

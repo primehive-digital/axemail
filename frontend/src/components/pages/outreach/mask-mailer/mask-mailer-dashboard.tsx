@@ -44,7 +44,9 @@ export function MaskMailerDashboard() {
         isSending={sendMutation.isPending}
         isQuotaAvailable={isQuotaAvailable}
         isLoadingCapacity={query.isLoading}
+        replyToOptions={query.data?.replyToOptions ?? []}
       />
     </div>
   );
 }
+

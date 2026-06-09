@@ -20,6 +20,7 @@ export type MailerComposerPayload = {
   }>;
   content: string;
   metadata?: Record<string, unknown>;
+  bypassUserQuota?: boolean;
 };
 
 export type ProviderDispatchPayload = {
@@ -47,3 +48,4 @@ export type ProviderDispatchPayload = {
   };
   metadata: Record<string, unknown>;
 };
+

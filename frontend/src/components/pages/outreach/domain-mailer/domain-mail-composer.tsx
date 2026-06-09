@@ -1,5 +1,5 @@
-import { MailComposerCard } from "@/components/shared/mail-composer-card";
-import type { MailerSendPayload } from "@/lib/outreach/outreach-api";
+﻿import { MailComposerCard } from "@/components/shared/mail-composer-card";
+import type { MailerSendPayload, ReplyToOption } from "@/lib/outreach/outreach-api";
 
 type DomainMailComposerProps = {
   onSend: (input: MailerSendPayload) => Promise<unknown>;
@@ -7,9 +7,10 @@ type DomainMailComposerProps = {
   isCooldownActive?: boolean;
   isQuotaAvailable?: boolean;
   isLoadingCapacity?: boolean;
+  replyToOptions?: ReplyToOption[];
 };
 
-export function DomainMailComposer({ onSend, isSending, isCooldownActive, isQuotaAvailable, isLoadingCapacity }: DomainMailComposerProps) {
+export function DomainMailComposer({ onSend, isSending, isCooldownActive, isQuotaAvailable, isLoadingCapacity, replyToOptions = [] }: DomainMailComposerProps) {
   return (
     <MailComposerCard
       title="Domain Mail Composer"
@@ -19,6 +20,8 @@ export function DomainMailComposer({ onSend, isSending, isCooldownActive, isQuot
       isCooldownActive={isCooldownActive}
       isQuotaAvailable={isQuotaAvailable}
       isLoadingCapacity={isLoadingCapacity}
+      replyToOptions={replyToOptions}
     />
   );
 }
+

@@ -30,6 +30,8 @@ export type AllocationManagementDashboardData = {
   pools: AllocationPool[];
   rows: AllocationRow[];
   assignableUsers: AllocationUser[];
+  workerRows: AllocationRow[];
+  assignableWorkers: AllocationUser[];
 };
 
 export type AssignAllocationPayload = {
@@ -65,4 +67,17 @@ async function requestJson<T>(url: string, init?: RequestInit) {
   }
 
   return payload.data as T;
+}
+export type AssignWorkerAllocationPayload = {
+  workerId: string;
+  gmail: number;
+  domain: number;
+  mask: number;
+};
+
+export async function assignWorkerAllocation(input: AssignWorkerAllocationPayload) {
+  return requestJson("/api/worker-limits/assign", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }

@@ -1,14 +1,15 @@
-import { MailComposerCard } from "@/components/shared/mail-composer-card";
-import type { MailerSendPayload } from "@/lib/outreach/outreach-api";
+﻿import { MailComposerCard } from "@/components/shared/mail-composer-card";
+import type { MailerSendPayload, ReplyToOption } from "@/lib/outreach/outreach-api";
 
 type MaskMailComposerProps = {
   onSend: (input: MailerSendPayload) => Promise<unknown>;
   isSending?: boolean;
   isQuotaAvailable?: boolean;
   isLoadingCapacity?: boolean;
+  replyToOptions?: ReplyToOption[];
 };
 
-export function MaskMailComposer({ onSend, isSending, isQuotaAvailable, isLoadingCapacity }: MaskMailComposerProps) {
+export function MaskMailComposer({ onSend, isSending, isQuotaAvailable, isLoadingCapacity, replyToOptions = [] }: MaskMailComposerProps) {
   return (
     <MailComposerCard
       title="Mask Mail Composer"
@@ -18,6 +19,8 @@ export function MaskMailComposer({ onSend, isSending, isQuotaAvailable, isLoadin
       isSending={isSending}
       isQuotaAvailable={isQuotaAvailable}
       isLoadingCapacity={isLoadingCapacity}
+      replyToOptions={replyToOptions}
     />
   );
 }
+

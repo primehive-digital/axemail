@@ -8,8 +8,44 @@ export type OverviewMetric = {
   total: number;
 };
 
+export type OverviewActivity = {
+  id: string;
+  actorType: "employee" | "bot";
+  actorName: string;
+  actorEmail?: string;
+  message: string;
+  mailer: string;
+  mailerType: "gmail" | "domain" | "mask" | "collective" | "automation";
+  occurredAt: string;
+  tone: "success" | "info" | "warning";
+};
+
+export type OverviewActivityFeed = {
+  items: OverviewActivity[];
+  generatedAt: string;
+  shiftWarningActive: boolean;
+};
+
+export type OverviewLeaderboardEmployee = {
+  id: string;
+  name: string;
+  email: string;
+  progress: number;
+  completed: number;
+  target: number;
+  remaining: number;
+};
+
+export type OverviewLeaderboard = {
+  leaders: OverviewLeaderboardEmployee[];
+  behind: OverviewLeaderboardEmployee[];
+  generatedAt: string;
+};
+
 export type OverviewDashboardData = {
   metrics: OverviewMetric[];
+  leaderboard: OverviewLeaderboard;
+  activityFeed: OverviewActivityFeed;
 };
 
 export async function getOverviewDashboard() {

@@ -1,5 +1,5 @@
-import type { ComponentType } from "react";
-import { Eye, Globe2, Mail, Reply, Send, Shield, Sparkles, User } from "lucide-react";
+﻿import type { ComponentType } from "react";
+import { Eye, Globe2, Mail, Send, Shield, User } from "lucide-react";
 
 import { MAILER_TYPE, MASK_MAILER_FROM_EMAIL_EXT, type MailerType } from "@/constants/enum";
 
@@ -24,8 +24,6 @@ export const deliveryFields: TemplateSenderField[] = [
   { name: "fromName", label: "From Name", required: true, placeholder: "Axemail Campaign Team", icon: User },
   { name: "previewText", label: "Preview Text", placeholder: "Short inbox preview shown before opening", icon: Eye },
   { name: "to", label: "To", required: true, type: "email", placeholder: "recipient@company.com", icon: Send },
-  { name: "replyTo", label: "Reply-To", required: true, type: "email", placeholder: "reply@yourdomain.com", icon: Reply },
-  { name: "subjectPreview", label: "Subject Preview", placeholder: "Generated from the selected template", icon: Sparkles },
 ];
 
 export function getCapacityLogo(mailerType: MailerType) {
@@ -33,3 +31,6 @@ export function getCapacityLogo(mailerType: MailerType) {
   if (mailerType === MAILER_TYPE.DOMAIN) return { logoSrc: "/icons/domain-capacity-logo.png", logoAlt: "Domain capacity" };
   return { logoSrc: "/icons/mask-capacity-logo.png", logoAlt: "Mask capacity" };
 }
+
+
+

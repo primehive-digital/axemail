@@ -21,7 +21,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Notification } from "@/components/layouts/notification";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { getDashboardNavigationTitle } from "@/constants/dashboard-navigation";
@@ -134,7 +133,6 @@ export function DashboardHeader() {
             orientation="vertical"
             className="hidden data-[orientation=vertical]:h-8 lg:block rounded-full! mx-2 my-auto bg-dark-border w-0.75!"
           />
-          <Notification />
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button className="group rounded-full bg-destructive text-destructive-foreground hover:bg-red-400 shadow-[#e7000b]/10 shadow-sm hover:shadow-md hover:shadow-[#e7000b]/20 transition-all ease-in-out duration-200 border-none">

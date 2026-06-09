@@ -19,8 +19,8 @@ export function OverviewDashboard() {
     <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
       <OverviewMetrics metrics={query.data?.metrics ?? []} isLoading={query.isLoading} />
       <section className="grid gap-4 lg:grid-cols-5">
-        <OverviewActivityCard />
-        <OverviewLeaderboardCard />
+        <OverviewActivityCard activityFeed={query.data?.activityFeed} />
+        <OverviewLeaderboardCard leaderboard={query.data?.leaderboard} />
       </section>
     </div>
   );

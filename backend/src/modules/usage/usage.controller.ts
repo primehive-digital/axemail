@@ -2,9 +2,9 @@ import type { Request, Response } from "express";
 import { Role } from "@prisma/client";
 
 import { getOverview } from "@/services/analytics.service";
-import { assignUserLimits, buildUserUsage, getMailerAvailability, getUsageByRole } from "@/services/quota.service";
+import { assignUserLimits, assignWorkerLimits, buildUserUsage, getMailerAvailability, getUsageByRole } from "@/services/quota.service";
 import { asyncHandler } from "@/utils/async-handler";
-import { assignLimitsSchema, mailerTypeParamSchema } from "@/modules/usage/usage.schemas";
+import { assignLimitsSchema, assignWorkerLimitsSchema, mailerTypeParamSchema } from "@/modules/usage/usage.schemas";
 
 export const getUsageHandler = asyncHandler(async (request: Request, response: Response) => {
   if (request.auth!.role === Role.EMPLOYEE) {
@@ -27,6 +27,14 @@ export const assignLimitsHandler = asyncHandler(async (request: Request, respons
   });
 });
 
+export const assignWorkerLimitsHandler = asyncHandler(async (request: Request, response: Response) => {
+  const payload = assignWorkerLimitsSchema.parse({
+    ...request.body,
+    workerId: request.params.workerId ?? request.body.workerId,
+  });
+  response.json({ data: await assignWorkerLimits(payload) });
+});
+
 export const getMailerCardsHandler = asyncHandler(async (request: Request, response: Response) => {
   response.json({ data: (await buildUserUsage(request.auth!.userId)).mailerQuotas });
 });
@@ -44,3 +52,5 @@ export const getMailerAvailabilityHandler = asyncHandler(async (request: Request
   const { mailerType } = mailerTypeParamSchema.parse(request.params);
   response.json({ data: await getMailerAvailability({ mailerType, userId: request.auth!.userId }) });
 });
+
+

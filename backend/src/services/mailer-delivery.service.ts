@@ -1,13 +1,13 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 
 import { DeliveryStatus, Prisma, MailerType } from "@prisma/client";
 
-import { env } from "@/config/env";
 import { prisma } from "@/config/prisma";
 import { buildEmailHeaders, buildEnvelope } from "@/services/email-composer.service";
 import { resolveUserContext } from "@/services/context.service";
 import { dispatchMessage } from "@/services/mailer-dispatch.service";
 import { getMaskServerHealth } from "@/services/mask-server.service";
+import { assertReplyToAllowed, getMailerCooldownSchedule } from "@/services/mailer-customization.service";
 import type { MailerComposerPayload } from "@/types/mailer.types";
 import { AppError } from "@/utils/app-error";
 import { startOfTodayUtc } from "@/utils/date";
@@ -19,6 +19,7 @@ const reservedDeliveryStatuses = [
 
 export async function sendComposerCampaign(input: MailerComposerPayload) {
   const user = await resolveUserContext({ role: input.role, userId: input.userId });
+  await assertReplyToAllowed({ mailerType: input.mailerType.toUpperCase() as MailerType, replyTo: input.replyTo });
   const deliveryId = crypto.randomUUID();
 
   const reservedDelivery = await retrySerializable(async () => {
@@ -28,6 +29,7 @@ export async function sendComposerCampaign(input: MailerComposerPayload) {
         userId: user.id,
         mailerType: input.mailerType,
         to: input.to,
+        bypassUserQuota: Boolean(input.bypassUserQuota),
       });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   });
@@ -221,7 +223,7 @@ async function processDelivery(input: {
       (input.mailerType === MailerType.DOMAIN || input.mailerType === MailerType.GMAIL) &&
       index < deliveries.length - 1
     ) {
-      await sleep(getCooldownSeconds(input.mailerType) * 1000);
+      await sleep((await getCooldownSeconds(input.mailerType)) * 1000);
     }
   }
 
@@ -246,6 +248,7 @@ async function reserveDelivery(
     userId: string;
     mailerType: "gmail" | "domain" | "mask";
     to: string;
+    bypassUserQuota?: boolean;
   },
 ) {
   const mailerType = input.mailerType.toUpperCase() as MailerType;
@@ -255,32 +258,34 @@ async function reserveDelivery(
     throw new AppError("At least one recipient is required.", 400);
   }
 
-  const allocation = await transaction.userMailerAllocation.findUnique({
-    where: {
-      userId_mailerType: {
+  if (!input.bypassUserQuota) {
+    const allocation = await transaction.userMailerAllocation.findUnique({
+      where: {
+        userId_mailerType: {
+          userId: input.userId,
+          mailerType,
+        },
+      },
+    });
+
+    const assignedLimit = allocation?.assignedLimit ?? 0;
+
+    const reservedForUser = await transaction.deliveryRecord.count({
+      where: {
         userId: input.userId,
         mailerType,
+        createdAt: { gte: startOfTodayUtc() },
+        status: { in: reservedDeliveryStatuses as unknown as DeliveryStatus[] },
       },
-    },
-  });
-
-  const assignedLimit = allocation?.assignedLimit ?? 0;
-
-  const reservedForUser = await transaction.deliveryRecord.count({
-    where: {
-      userId: input.userId,
-      mailerType,
-      createdAt: { gte: startOfTodayUtc() },
-      status: { in: reservedDeliveryStatuses as unknown as DeliveryStatus[] },
-    },
-  });
-
-  const remainingQuota = Math.max(assignedLimit - reservedForUser, 0);
-
-  if (remainingQuota < recipients.length) {
-    throw new AppError("Assigned mailer quota exceeded.", 409, {
-      remaining: remainingQuota,
     });
+
+    const remainingQuota = Math.max(assignedLimit - reservedForUser, 0);
+
+    if (remainingQuota < recipients.length) {
+      throw new AppError("Assigned mailer quota exceeded.", 409, {
+        remaining: remainingQuota,
+      });
+    }
   }
 
   const accountAssignments = await reserveSmtpMailerAccounts(transaction, mailerType, recipients.length);
@@ -426,11 +431,8 @@ function splitAddresses(value?: string) {
     .filter(Boolean);
 }
 
-function getCooldownSeconds(mailerType: MailerType) {
-  const weights =
-    mailerType === MailerType.GMAIL
-      ? [...env.GMAIL_COOLDOWN_SCHEDULE]
-      : [...env.DOMAIN_COOLDOWN_SCHEDULE];
+async function getCooldownSeconds(mailerType: MailerType) {
+  const weights = [...(await getMailerCooldownSchedule(mailerType))];
   if (weights.length === 5) {
     weights.unshift(20, 35, 50, 70);
   }
@@ -442,3 +444,8 @@ function sleep(timeoutMs: number) {
     setTimeout(resolve, timeoutMs);
   });
 }
+
+
+
+
+

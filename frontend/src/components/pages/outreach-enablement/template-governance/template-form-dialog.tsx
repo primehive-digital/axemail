@@ -31,12 +31,10 @@ const blankField: TemplateField = {
 
 const initialForm: TemplatePayload = {
   name: "",
-  description: "",
   subject: "",
   contentHtml: "",
   supportedMailers: [MAILER_TYPE.GMAIL, MAILER_TYPE.DOMAIN, MAILER_TYPE.MASK],
   fields: [{ ...blankField }],
-  isActive: true,
 };
 
 type TemplateFormDialogProps = {
@@ -111,7 +109,7 @@ export function TemplateFormDialog({ mode, trigger, template, open: controlledOp
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Create Template" : "Edit Template"}</DialogTitle>
-          <DialogDescription>{mode === "create" ? "Build a reusable outreach template with custom fields." : "Update template fields, content, and availability."}</DialogDescription>
+          <DialogDescription>{mode === "create" ? "Build a reusable outreach template with custom fields." : "Update template fields and content."}</DialogDescription>
         </DialogHeader>
 
         <form className="space-y-5" onSubmit={handleSubmit}>
@@ -120,10 +118,6 @@ export function TemplateFormDialog({ mode, trigger, template, open: controlledOp
             <TemplateInput id="template-subject" label="Subject" placeholder="Notice for {{key}}" icon={Tag} value={form.subject} required onChange={(value) => update("subject", value)} />
           </div>
 
-          <div>
-            <Label className="font-google-sans text-sm font-semibold text-heading">Description</Label>
-            <Textarea value={form.description ?? ""} onChange={(event) => update("description", event.target.value)} placeholder="Short internal description for managers." className="mt-2 font-inter text-sm" />
-          </div>
 
           <div>
             <Label className="font-google-sans text-sm font-semibold text-heading">Supported Mailers <span className="text-destructive">*</span></Label>
@@ -182,10 +176,6 @@ export function TemplateFormDialog({ mode, trigger, template, open: controlledOp
             <Textarea value={form.contentHtml} onChange={(event) => update("contentHtml", event.target.value)} placeholder="<p>Hello {{key}},</p>" className="mt-2 min-h-44 font-mono text-sm" />
           </div>
 
-          <label className="flex items-center gap-2 font-inter text-sm text-heading">
-            <Checkbox checked={form.isActive} onCheckedChange={(checked) => update("isActive", checked === true)} />
-            Active and available in template sender
-          </label>
 
           <div className="flex justify-end">
             <Button disabled={isPending} className="h-10 rounded-full border-none bg-primary px-4 font-google-sans shadow-sm shadow-[#2e5fa2]/10 transition-all duration-200 ease-in-out hover:bg-primary-hover hover:shadow-md hover:shadow-[#2e5fa2]/20 disabled:cursor-not-allowed disabled:opacity-70">
@@ -243,12 +233,10 @@ function FieldTypeDropdown({ value, onChange }: { value: TemplateFieldType; onCh
 function templateToForm(template: EmailTemplate): TemplatePayload {
   return {
     name: template.name,
-    description: template.description ?? "",
     subject: template.subject,
     contentHtml: template.contentHtml,
     supportedMailers: template.supportedMailers,
     fields: template.fields.length ? template.fields : [{ ...blankField }],
-    isActive: template.isActive,
   };
 }
 
@@ -256,7 +244,6 @@ function normalizeForm(form: TemplatePayload): TemplatePayload {
   return {
     ...form,
     name: form.name.trim(),
-    description: form.description?.trim() || undefined,
     subject: form.subject.trim(),
     contentHtml: form.contentHtml.trim(),
     fields: form.fields

@@ -1,10 +1,11 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 
 import { MailerType, Role } from "@prisma/client";
 
 import { prisma } from "@/config/prisma";
 import { sendComposerCampaign } from "@/services/mailer-delivery.service";
 import { buildUserUsage } from "@/services/quota.service";
+import { assertReplyToAllowed, buildMailerCooldown, listReplyToOptionsForMailer } from "@/services/mailer-customization.service";
 import type { MailerComposerPayload } from "@/types/mailer.types";
 import { AppError } from "@/utils/app-error";
 import { mapMailerType } from "@/utils/enum-mappers";
@@ -19,12 +20,10 @@ export type TemplateFieldDto = {
 
 type TemplateInput = {
   name: string;
-  description?: string;
   subject: string;
   contentHtml: string;
   supportedMailers: MailerType[];
   fields: TemplateFieldDto[];
-  isActive?: boolean;
 };
 
 export async function listTemplates(input: { role: Role; userId: string }) {
@@ -42,12 +41,11 @@ export async function createTemplate(input: TemplateInput & { createdById: strin
     data: {
       key: await createTemplateKey(input.name),
       name: input.name,
-      description: input.description,
       subject: input.subject,
       contentHtml: input.contentHtml,
       fields: input.fields,
       supportedMailers: input.supportedMailers.map(mapMailerType),
-      isActive: input.isActive ?? true,
+      isActive: true,
       createdById: input.createdById,
     },
     include: { createdBy: { select: { firstName: true, lastName: true, email: true } } },
@@ -68,12 +66,11 @@ export async function updateTemplate(input: {
     where: { id: input.templateId },
     data: {
       name: input.input.name,
-      description: input.input.description,
       subject: input.input.subject,
       contentHtml: input.input.contentHtml,
       fields: input.input.fields,
       supportedMailers: input.input.supportedMailers?.map(mapMailerType),
-      isActive: input.input.isActive,
+      isActive: true,
     },
     include: { createdBy: { select: { firstName: true, lastName: true, email: true } } },
   });
@@ -103,7 +100,8 @@ export async function getTemplateSenderDashboard(input: { userId: string; mailer
       sent: quota?.used ?? 0,
       remaining: quota?.remaining ?? 0,
     },
-    cooldown: buildCooldown(input.mailerType),
+    cooldown: await buildMailerCooldown(input.mailerType),
+    replyToOptions: await listReplyToOptionsForMailer(input.mailerType),
     mailerTypes: [MailerType.GMAIL, MailerType.DOMAIN, MailerType.MASK].map((mailerType) => ({
       value: mapMailerType(mailerType),
       label: formatMailerName(mailerType),
@@ -122,8 +120,12 @@ export async function sendTemplateMail(input: {
   to: string;
   replyTo: string;
   previewText?: string;
+  subjectOverride?: string;
+  bypassUserQuota?: boolean;
   templateValues: Record<string, string>;
 }) {
+  await assertReplyToAllowed({ mailerType: input.mailerType, replyTo: input.replyTo });
+
   const template = await prisma.emailTemplate.findUnique({ where: { id: input.templateId } });
 
   if (!template || !template.isActive) {
@@ -154,10 +156,11 @@ export async function sendTemplateMail(input: {
     fromEmail: input.fromEmail,
     to: input.to,
     replyTo: input.replyTo,
-    subject: renderTemplateString(template.subject, input.templateValues),
+    subject: input.subjectOverride?.trim() || renderTemplateString(template.subject, input.templateValues),
     previewText: input.previewText,
     content: renderTemplateString(template.contentHtml, input.templateValues),
     attachments: [],
+    bypassUserQuota: input.bypassUserQuota,
   };
 
   return sendComposerCampaign(payload);
@@ -191,7 +194,6 @@ function mapTemplate(template: {
   id: string;
   key: string;
   name: string;
-  description: string | null;
   fields: unknown;
   supportedMailers: unknown;
   subject: string;
@@ -206,12 +208,10 @@ function mapTemplate(template: {
     id: template.id,
     key: template.key,
     name: template.name,
-    description: template.description,
     fields: getTemplateFields(template.fields),
     supportedMailers: getSupportedMailers(template.supportedMailers),
     subject: template.subject,
     contentHtml: template.contentHtml,
-    isActive: template.isActive,
     createdById: template.createdById,
     createdBy: template.createdBy
       ? {
@@ -273,16 +273,13 @@ function escapeHtml(value: string) {
     .replace(/'/gu, "&#039;");
 }
 
-function buildCooldown(mailerType: MailerType) {
-  if (mailerType === MailerType.MASK) {
-    return { enabled: false, secondsRemaining: 0, progress: 0 };
-  }
-
-  return { enabled: true, secondsRemaining: 60, progress: 100 };
-}
-
 function formatMailerName(mailerType: MailerType) {
   if (mailerType === MailerType.GMAIL) return "Gmail Mailer";
   if (mailerType === MailerType.DOMAIN) return "Domain Mailer";
   return "Mask Mailer";
 }
+
+
+
+
+

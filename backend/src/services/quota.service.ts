@@ -150,26 +150,20 @@ export async function assignUserLimits(input: {
     currentAllocations.map((row) => [row.mailerType, row.assignedLimit]),
   );
 
-  const [capacityMap, assignedByType] = await Promise.all([
+  const [capacityMap, userAssignedByType, workerAssignedByType] = await Promise.all([
     getMailerTypeDailyLimitMap(),
     prisma.userMailerAllocation.groupBy({
       by: ["mailerType"],
       where: { user: { role: Role.EMPLOYEE } },
       _sum: { assignedLimit: true },
     }),
+    prisma.automationWorkerMailerAllocation.groupBy({
+      by: ["mailerType"],
+      _sum: { assignedLimit: true },
+    }),
   ]);
 
-  const assignedMap = assignedByType.reduce<Record<MailerType, number>>(
-    (accumulator, row) => {
-      accumulator[row.mailerType] = row._sum.assignedLimit ?? 0;
-      return accumulator;
-    },
-    {
-      [MailerType.GMAIL]: 0,
-      [MailerType.DOMAIN]: 0,
-      [MailerType.MASK]: 0,
-    },
-  );
+  const assignedMap = sumAllocationGroups(userAssignedByType, workerAssignedByType);
 
   const rows: Array<{ mailerType: MailerType; assignedLimit: number }> = [
     { mailerType: MailerType.GMAIL, assignedLimit: input.gmail },
@@ -253,3 +247,99 @@ function buildQuotaLabel(mailerType: MailerType, userId: string) {
 
   return "Mask allocation";
 }
+
+export async function assignWorkerLimits(input: {
+  workerId: string;
+  gmail: number;
+  domain: number;
+  mask: number;
+}) {
+  const targetWorker = await prisma.automationWorker.findUnique({ where: { id: input.workerId } });
+
+  if (!targetWorker) {
+    throw new AppError("Target worker not found.", 404);
+  }
+
+  const currentAllocations = await prisma.automationWorkerMailerAllocation.findMany({ where: { workerId: input.workerId } });
+  const currentAllocationMap = new Map(currentAllocations.map((row) => [row.mailerType, row.assignedLimit]));
+
+  const [capacityMap, userAssignedByType, workerAssignedByType] = await Promise.all([
+    getMailerTypeDailyLimitMap(),
+    prisma.userMailerAllocation.groupBy({
+      by: ["mailerType"],
+      where: { user: { role: Role.EMPLOYEE } },
+      _sum: { assignedLimit: true },
+    }),
+    prisma.automationWorkerMailerAllocation.groupBy({
+      by: ["mailerType"],
+      _sum: { assignedLimit: true },
+    }),
+  ]);
+
+  const assignedMap = sumAllocationGroups(userAssignedByType, workerAssignedByType);
+  const rows: Array<{ mailerType: MailerType; assignedLimit: number }> = [
+    { mailerType: MailerType.GMAIL, assignedLimit: input.gmail },
+    { mailerType: MailerType.DOMAIN, assignedLimit: input.domain },
+    { mailerType: MailerType.MASK, assignedLimit: input.mask },
+  ];
+
+  for (const row of rows) {
+    const currentAssigned = currentAllocationMap.get(row.mailerType) ?? 0;
+    const totalCapacity = capacityMap[row.mailerType] ?? 0;
+    const remainingCapacity = Math.max(totalCapacity - assignedMap[row.mailerType], 0);
+    const requestedIncrease = Math.max(row.assignedLimit - currentAssigned, 0);
+
+    if (requestedIncrease > remainingCapacity) {
+      throw new AppError("Assigned limit exceeds remaining mailer capacity.", 409, {
+        mailerType: mapMailerType(row.mailerType),
+        totalCapacity,
+        currentlyAssigned: assignedMap[row.mailerType],
+        currentWorkerAssigned: currentAssigned,
+        requestedAssigned: row.assignedLimit,
+        requestedIncrease,
+        remainingCapacity,
+      });
+    }
+  }
+
+  await prisma.$transaction(
+    rows.map((row) =>
+      prisma.automationWorkerMailerAllocation.upsert({
+        where: {
+          workerId_mailerType: {
+            workerId: input.workerId,
+            mailerType: row.mailerType,
+          },
+        },
+        create: {
+          workerId: input.workerId,
+          mailerType: row.mailerType,
+          assignedLimit: row.assignedLimit,
+        },
+        update: {
+          assignedLimit: row.assignedLimit,
+        },
+      }),
+    ),
+  );
+
+  return { workerId: input.workerId };
+}
+
+function sumAllocationGroups(
+  userRows: Array<{ mailerType: MailerType; _sum: { assignedLimit: number | null } }>,
+  workerRows: Array<{ mailerType: MailerType; _sum: { assignedLimit: number | null } }>,
+) {
+  const assignedMap: Record<MailerType, number> = {
+    [MailerType.GMAIL]: 0,
+    [MailerType.DOMAIN]: 0,
+    [MailerType.MASK]: 0,
+  };
+
+  for (const row of [...userRows, ...workerRows]) {
+    assignedMap[row.mailerType] += row._sum.assignedLimit ?? 0;
+  }
+
+  return assignedMap;
+}
+

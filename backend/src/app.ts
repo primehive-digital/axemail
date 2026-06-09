@@ -1,14 +1,16 @@
-import cors from "cors";
+﻿import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 
 import { env } from "@/config/env";
 import { authRouter } from "@/modules/auth/auth.routes";
+import { automationRouter } from "@/modules/automation/automation.routes";
 import { dashboardRouter } from "@/modules/dashboard/dashboard.routes";
 import { healthRouter } from "@/modules/health/health.routes";
 import { reportsRouter } from "@/modules/reports/reports.routes";
 import { smtpMailerAccountsRouter } from "@/modules/smtp-mailer-accounts/smtp-mailer-accounts.routes";
 import { mailersRouter } from "@/modules/mailers/mailers.routes";
+import { mailerCustomizationRouter } from "@/modules/mailer-customization/mailer-customization.routes";
 import { templatesRouter } from "@/modules/templates/templates.routes";
 import { usageRouter } from "@/modules/usage/usage.routes";
 import { usersRouter } from "@/modules/users/users.routes";
@@ -42,15 +44,19 @@ export function createApp() {
   app.use("/api", healthRouter);
   app.use("/api", authRouter);
   app.use("/api", usersRouter);
+  app.use("/api", automationRouter);
   app.use("/api", dashboardRouter);
   app.use("/api", usageRouter);
   app.use("/api", reportsRouter);
   app.use("/api", templatesRouter);
   app.use("/api", smtpMailerAccountsRouter);
   app.use("/api", mailersRouter);
+  app.use("/api", mailerCustomizationRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
 
   return app;
 }
+
+

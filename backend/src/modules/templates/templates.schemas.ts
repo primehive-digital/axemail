@@ -23,12 +23,10 @@ export const templateFieldSchema = z.object({
 
 export const createTemplateSchema = z.object({
   name: z.string().trim().min(1).max(120),
-  description: z.string().trim().max(240).optional(),
   subject: z.string().trim().min(1).max(180),
   contentHtml: z.string().trim().min(1),
   supportedMailers: z.array(mailerTypeSchema).min(1).max(3),
   fields: z.array(templateFieldSchema).max(24).default([]),
-  isActive: z.boolean().default(true),
 });
 
 export const updateTemplateSchema = createTemplateSchema.partial().refine((value) => Object.keys(value).length > 0, {

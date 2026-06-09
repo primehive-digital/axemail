@@ -1,4 +1,4 @@
-import {
+﻿import {
   LayoutDashboard,
   Mail,
   Globe,
@@ -12,6 +12,7 @@ import {
   PieChart,
   Bot,
   Files,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import { USER_ROLE, type UserRole } from "@/constants/enum";
@@ -134,6 +135,12 @@ export const DashboardNavigationData: DashboardNavigationEntry[] = [
         icon: PieChart,
         roles: adminManagerRoles,
       },
+      {
+        title: "Mailer Customization",
+        href: "/administration/mailer-customization",
+        icon: SlidersHorizontal,
+        roles: adminManagerRoles,
+      },
     ],
   },
 ] satisfies DashboardNavigationEntry[];
@@ -170,3 +177,5 @@ export function getDashboardNavigationTitle(pathname: string) {
     )?.title ?? "Dashboard"
   );
 }
+
+

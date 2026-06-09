@@ -18,7 +18,6 @@ const roleRoutes: Record<UserRole, string[]> = {
     "/operations",
     "/analytics/activity-insights",
     "/settings",
-    "/notifications",
   ],
   manager: [
     "/overview",
@@ -27,14 +26,12 @@ const roleRoutes: Record<UserRole, string[]> = {
     "/administration/user-management",
     "/administration/allocation-management",
     "/settings",
-    "/notifications",
   ],
   admin: [
     "/overview",
     "/analytics",
     "/administration",
     "/settings",
-    "/notifications",
   ],
 };
 

@@ -1,5 +1,5 @@
-import { MailComposerCard } from "@/components/shared/mail-composer-card";
-import type { MailerSendPayload } from "@/lib/outreach/outreach-api";
+﻿import { MailComposerCard } from "@/components/shared/mail-composer-card";
+import type { MailerSendPayload, ReplyToOption } from "@/lib/outreach/outreach-api";
 
 type GmailMailComposerProps = {
   onSend: (input: MailerSendPayload) => Promise<unknown>;
@@ -7,9 +7,10 @@ type GmailMailComposerProps = {
   isCooldownActive?: boolean;
   isQuotaAvailable?: boolean;
   isLoadingCapacity?: boolean;
+  replyToOptions?: ReplyToOption[];
 };
 
-export function GmailMailComposer({ onSend, isSending, isCooldownActive, isQuotaAvailable, isLoadingCapacity }: GmailMailComposerProps) {
+export function GmailMailComposer({ onSend, isSending, isCooldownActive, isQuotaAvailable, isLoadingCapacity, replyToOptions = [] }: GmailMailComposerProps) {
   return (
     <MailComposerCard
       title="Gmail Mail Composer"
@@ -19,6 +20,8 @@ export function GmailMailComposer({ onSend, isSending, isCooldownActive, isQuota
       isCooldownActive={isCooldownActive}
       isQuotaAvailable={isQuotaAvailable}
       isLoadingCapacity={isLoadingCapacity}
+      replyToOptions={replyToOptions}
     />
   );
 }
+

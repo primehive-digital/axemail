@@ -1,4 +1,4 @@
-import type { MailerType } from "@/constants/enum";
+﻿import type { MailerType } from "@/constants/enum";
 import { extractApiErrorMessage } from "@/lib/api-client";
 import type { MailerSendResult } from "@/lib/outreach/outreach-api";
 
@@ -16,12 +16,10 @@ export type EmailTemplate = {
   id: string;
   key: string;
   name: string;
-  description: string | null;
   fields: TemplateField[];
   supportedMailers: MailerType[];
   subject: string;
   contentHtml: string;
-  isActive: boolean;
   createdById: string | null;
   createdBy: { name: string; email: string } | null;
   createdAt: string;
@@ -30,12 +28,17 @@ export type EmailTemplate = {
 
 export type TemplatePayload = {
   name: string;
-  description?: string;
   subject: string;
   contentHtml: string;
   supportedMailers: MailerType[];
   fields: TemplateField[];
-  isActive: boolean;
+};
+
+export type TemplateReplyToOption = {
+  id: string;
+  mailerType: MailerType;
+  label: string;
+  email: string;
 };
 
 export type TemplateSenderDashboardData = {
@@ -53,6 +56,7 @@ export type TemplateSenderDashboardData = {
   };
   mailerTypes: Array<{ value: MailerType; label: string }>;
   templates: EmailTemplate[];
+  replyToOptions: TemplateReplyToOption[];
 };
 
 export type SendTemplatePayload = {
@@ -117,3 +121,5 @@ async function requestJson<T>(url: string, init?: RequestInit) {
 
   return payload.data as T;
 }
+
+

@@ -1,4 +1,4 @@
-generator client {
+﻿generator client {
   provider = "prisma-client-js"
 }
 
@@ -48,6 +48,18 @@ enum DeliveryStatus {
   FAILED
 }
 
+enum AutomationWorkerStatus {
+  WORKING
+  PAUSED
+}
+
+enum AutomationLeadStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
 model User {
   id           String                 @id @default(cuid())
   firstName    String
@@ -63,6 +75,7 @@ model User {
   deliveries   DeliveryRecord[]
   sessions     UserSession[]
   templates    EmailTemplate[]
+  createdAutomationWorkers AutomationWorker[] @relation("AutomationWorkerCreator")
 }
 
 model UserSession {
@@ -114,6 +127,26 @@ model MailerPolicy {
   @@map("SenderPolicy")
 }
 
+
+model MailerReplyToOption {
+  id         String     @id @default(cuid())
+  mailerType MailerType @map("senderType")
+  label      String
+  email      String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([mailerType, email])
+  @@index([mailerType])
+}
+
+model MailerCooldownSetting {
+  id         String     @id @default(cuid())
+  mailerType MailerType @unique @map("senderType")
+  schedule   Int[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
 model UserMailerAllocation {
   id            String     @id @default(cuid())
   userId        String
@@ -154,9 +187,9 @@ model EmailTemplate {
   name             String
   description      String?
   fields           Json
-  supportedMailers Json
-  subject          String
-  contentHtml      String
+  supportedMailers Json     @default("[]")
+  subject          String   @default("")
+  contentHtml      String   @default("")
   isActive         Boolean  @default(true)
   createdById      String?
   createdBy        User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
@@ -165,3 +198,61 @@ model EmailTemplate {
 
   @@index([createdById])
 }
+model AutomationWorker {
+  id          String                             @id @default(cuid())
+  name        String
+  pseudoName  String
+  status      AutomationWorkerStatus             @default(PAUSED)
+  createdById String?
+  startTime   String
+  createdAt   DateTime                           @default(now())
+  updatedAt   DateTime                           @updatedAt
+  createdBy   User?                              @relation("AutomationWorkerCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  leads       AutomationLead[]
+  allocations AutomationWorkerMailerAllocation[]
+
+  @@index([status])
+}
+
+model AutomationWorkerMailerAllocation {
+  id            String           @id @default(cuid())
+  workerId      String
+  mailerType    MailerType       @map("senderType")
+  assignedLimit Int
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  worker        AutomationWorker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@unique([workerId, mailerType])
+  @@index([mailerType])
+}
+
+model AutomationLead {
+  id              String               @id @default(cuid())
+  workerId        String?
+  templateId      String
+  templateKey     String
+  mailerType      MailerType           @map("senderType")
+  fromName        String
+  fromEmail       String?
+  replyTo         String
+  subject         String?
+  previewText     String?
+  recipientEmail  String
+  clientName      String?
+  templateValues  Json
+  status          AutomationLeadStatus @default(PENDING)
+  errorMessage    String?
+  scheduledAt     DateTime
+  sentAt          DateTime?
+  workDate        String
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  worker          AutomationWorker?    @relation(fields: [workerId], references: [id], onDelete: SetNull)
+
+  @@index([workerId, workDate])
+  @@index([status, scheduledAt])
+  @@index([templateId])
+}
+
+

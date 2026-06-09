@@ -1,10 +1,12 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+﻿import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { MAILER_TYPE, type MailerType } from "@/constants/enum";
 
 import { deliveryFields } from "./template-sender-data";
-import { MaskFromEmailField, TemplateSenderInput } from "./template-sender-fields";
+import type { TemplateReplyToOption } from "@/lib/templates/templates-api";
 
-export function DeliveryDetailsCard({ selectedMailer, disabled }: { selectedMailer: MailerType; disabled?: boolean }) {
+import { MaskFromEmailField, TemplateReplyToField, TemplateSenderInput } from "./template-sender-fields";
+
+export function DeliveryDetailsCard({ selectedMailer, disabled, replyToOptions, replyTo, onReplyToChange }: { selectedMailer: MailerType; disabled?: boolean; replyToOptions: TemplateReplyToOption[]; replyTo: string; onReplyToChange: (value: string) => void }) {
   const isMaskMailer = selectedMailer === MAILER_TYPE.MASK;
 
   return (
@@ -12,16 +14,18 @@ export function DeliveryDetailsCard({ selectedMailer, disabled }: { selectedMail
       <CardHeader className="border-b px-5 py-4 pt-6">
         <div>
           <h2 className="font-google-sans text-xl font-semibold text-heading">Delivery Details</h2>
-          <p className="font-inter text-sm text-muted-foreground">Configure recipient, sender, and subject details for this template send.</p>
+          <p className="font-inter text-sm text-muted-foreground">Configure recipient and sender details for this template send.</p>
         </div>
       </CardHeader>
 
       <CardContent className="grid gap-4 px-5 py-5 md:grid-cols-2">
         {isMaskMailer && <MaskFromEmailField disabled={disabled} />}
-        {deliveryFields.map((field) => (
-          <TemplateSenderInput key={field.name} {...field} disabled={disabled} readOnly={field.name === "subjectPreview"} />
-        ))}
+        <TemplateReplyToField options={replyToOptions} value={replyTo} onChange={onReplyToChange} disabled={disabled} />
+        {deliveryFields.map((field) => <TemplateSenderInput key={field.name} {...field} disabled={disabled} />)}
       </CardContent>
     </Card>
   );
 }
+
+
+

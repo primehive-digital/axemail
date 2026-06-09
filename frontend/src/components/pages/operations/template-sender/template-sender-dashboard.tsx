@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,12 +21,15 @@ export function TemplateSenderDashboard() {
   const [selectedMailer, setSelectedMailer] = useState<MailerType>(MAILER_TYPE.GMAIL);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const [replyTo, setReplyTo] = useState("");
   const queryKey = ["template-sender-dashboard", selectedMailer];
   const query = useQuery({ queryKey, queryFn: () => getTemplateSenderDashboard(selectedMailer) });
   const templates = useMemo(() => query.data?.templates ?? [], [query.data?.templates]);
   const activeTemplateId = selectedTemplateId && templates.some((template) => template.id === selectedTemplateId) ? selectedTemplateId : templates[0]?.id ?? "";
   const selectedTemplate = useMemo(() => templates.find((template) => template.id === activeTemplateId), [activeTemplateId, templates]);
   const cooldownTotalSeconds = query.data?.cooldown.secondsRemaining ?? 0;
+  const replyToOptions = query.data?.replyToOptions ?? [];
+  const selectedReplyTo = replyToOptions.some((option) => option.email === replyTo) ? replyTo : replyToOptions[0]?.email ?? "";
   const isQuotaAvailable = Boolean(query.data && query.data.capacity.allotted > 0 && query.data.capacity.remaining > 0);
   const isCooldownActive = selectedMailer !== MAILER_TYPE.MASK && cooldownRemaining > 0;
   const sendMutation = useMutation({
@@ -44,7 +47,8 @@ export function TemplateSenderDashboard() {
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to send template mail."),
   });
-  const disabled = Boolean(query.isLoading || sendMutation.isPending || isCooldownActive || !isQuotaAvailable || !selectedTemplate);
+  const disabled = Boolean(query.isLoading || sendMutation.isPending || isCooldownActive || !isQuotaAvailable || !selectedTemplate || replyToOptions.length === 0);
+
 
   useEffect(() => {
     if (cooldownRemaining <= 0) return;
@@ -71,7 +75,7 @@ export function TemplateSenderDashboard() {
     if (!isQuotaAvailable) return toast.error("No remaining mailer allocation is available.");
     if (isCooldownActive) return toast.error("Please wait for the cooldown to finish before sending another template mail.");
 
-    const payload = buildPayload(new FormData(event.currentTarget), selectedTemplate, selectedMailer);
+    const payload = buildPayload(new FormData(event.currentTarget), selectedTemplate, selectedMailer, replyToOptions);
     if (!payload) return;
     await sendMutation.mutateAsync(payload);
   }
@@ -92,7 +96,7 @@ export function TemplateSenderDashboard() {
 
       <section className="grid grid-cols-1 gap-4">
         <TemplateDetailsCard template={selectedTemplate} disabled={disabled} />
-        <DeliveryDetailsCard selectedMailer={selectedMailer} disabled={disabled} />
+        <DeliveryDetailsCard selectedMailer={selectedMailer} disabled={disabled} replyToOptions={replyToOptions} replyTo={selectedReplyTo} onReplyToChange={setReplyTo} />
 
         <div className="flex justify-end">
           <Button disabled={disabled} className="h-10 rounded-full border-none bg-primary px-4 font-google-sans shadow-sm shadow-[#2e5fa2]/10 transition-all duration-200 ease-in-out hover:bg-primary-hover hover:shadow-md hover:shadow-[#2e5fa2]/20 disabled:cursor-not-allowed disabled:opacity-70">
@@ -105,7 +109,7 @@ export function TemplateSenderDashboard() {
   );
 }
 
-function buildPayload(formData: FormData, template: EmailTemplate, mailerType: MailerType): SendTemplatePayload | null {
+function buildPayload(formData: FormData, template: EmailTemplate, mailerType: MailerType, replyToOptions: Array<{ email: string }>): SendTemplatePayload | null {
   const fromName = requiredValue(formData, "fromName", "From Name");
   const to = requiredValue(formData, "to", "To");
   const replyTo = requiredValue(formData, "replyTo", "Reply-To");
@@ -114,7 +118,7 @@ function buildPayload(formData: FormData, template: EmailTemplate, mailerType: M
 
   if (!fromName || !to || !replyTo) return null;
   if (!validateEmailList(to)) return toast.error("Enter valid recipient email addresses."), null;
-  if (!emailPattern.test(replyTo)) return toast.error("Enter a valid reply-to email address."), null;
+  if (!replyToOptions.some((option) => option.email === replyTo)) return toast.error("Select an approved reply-to email."), null;
 
   const templateValues: Record<string, string> = {};
   for (const field of template.fields) {
@@ -152,3 +156,9 @@ function requiredValue(formData: FormData, key: string, label: string) {
 function validateEmailList(value: string) {
   return value.split(",").map((item) => item.trim()).filter(Boolean).every((email) => emailPattern.test(email));
 }
+
+
+
+
+
+

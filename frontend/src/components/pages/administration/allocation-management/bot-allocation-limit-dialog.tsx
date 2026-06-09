@@ -143,9 +143,9 @@ export function BotAllocationLimitDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Assign Bot Allocation</DialogTitle>
+          <DialogTitle>Assign Worker Allocation</DialogTitle>
           <DialogDescription>
-            Assign or update daily mailer limits for a bot within the available pool.
+            Assign or update daily mailer limits for a worker within the available pool.
           </DialogDescription>
         </DialogHeader>
 
@@ -157,13 +157,13 @@ export function BotAllocationLimitDialog({
           </div>
 
           <div>
-            <Label className="font-google-sans text-sm font-semibold text-heading">Select Bot</Label>
+            <Label className="font-google-sans text-sm font-semibold text-heading">Select Worker</Label>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button type="button" variant="outline" className="mt-2 h-11 w-full justify-between rounded-sm bg-background px-4 font-inter font-normal" disabled={bots.length === 0}>
                   <span className="flex min-w-0 items-center gap-2">
                     <Bot className="size-4 text-muted-foreground" />
-                    <span className="truncate">{selectedBot ? `${selectedBot.firstName} ${selectedBot.lastName}` : "No bots available"}</span>
+                    <span className="truncate">{selectedBot ? `${selectedBot.firstName} ${selectedBot.lastName}` : "No workers available"}</span>
                   </span>
                   <ChevronDown className="size-4 text-muted-foreground" />
                 </Button>
@@ -183,9 +183,9 @@ export function BotAllocationLimitDialog({
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            <AllocationInput id="assign-bot-gmail-limit" label="Assign Gmail Limit" icon={Mail} value={form.gmail} onChange={(value) => setForm((current) => ({ ...current, gmail: value }))} />
-            <AllocationInput id="assign-bot-domain-limit" label="Assign Domain Limit" icon={Globe} value={form.domain} onChange={(value) => setForm((current) => ({ ...current, domain: value }))} />
-            <AllocationInput id="assign-bot-mask-limit" label="Assign Mask Limit" icon={Shield} value={form.mask} onChange={(value) => setForm((current) => ({ ...current, mask: value }))} />
+            <AllocationInput id="assign-worker-gmail-limit" label="Assign Gmail Limit" icon={Mail} value={form.gmail} onChange={(value) => setForm((current) => ({ ...current, gmail: value }))} />
+            <AllocationInput id="assign-worker-domain-limit" label="Assign Domain Limit" icon={Globe} value={form.domain} onChange={(value) => setForm((current) => ({ ...current, domain: value }))} />
+            <AllocationInput id="assign-worker-mask-limit" label="Assign Mask Limit" icon={Shield} value={form.mask} onChange={(value) => setForm((current) => ({ ...current, mask: value }))} />
           </div>
 
           <div className="flex justify-end">
@@ -199,3 +199,4 @@ export function BotAllocationLimitDialog({
     </Dialog>
   );
 }
+

@@ -1,5 +1,12 @@
-import { extractApiErrorMessage } from "@/lib/api-client";
+﻿import { extractApiErrorMessage } from "@/lib/api-client";
 import type { MailerType } from "@/constants/enum";
+
+export type ReplyToOption = {
+  id: string;
+  mailerType: MailerType;
+  label: string;
+  email: string;
+};
 
 export type MailerStatus = {
   mailerType: MailerType;
@@ -14,6 +21,7 @@ export type MailerStatus = {
     secondsRemaining: number;
     progress: number;
   };
+  replyToOptions: ReplyToOption[];
 };
 
 export type MailAttachment = {
@@ -69,3 +77,5 @@ async function requestJson<T>(url: string, init?: RequestInit) {
 
   return payload.data as T;
 }
+
+
