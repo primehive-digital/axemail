@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ComponentType, type FormEvent, type R
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { FontSize, TextStyle } from "@tiptap/extension-text-style";
+import { Color } from "@tiptap/extension-color";
 import FontFamily from "@tiptap/extension-font-family";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
@@ -44,6 +45,11 @@ import { cn } from "@/lib/utils";
 
 const fontFamilies = ["Arial", "Helvetica", "Georgia", "Times New Roman", "Verdana"];
 const fontSizes = ["12px", "14px", "16px", "18px", "24px"];
+const textColors = [
+  { label: "Black", value: "#000000" },
+  { label: "Blue", value: "#005EA2" },
+];
+const defaultTextColor = textColors[0].value;
 const maskEmailExtensions = Object.values(MASK_MAILER_FROM_EMAIL_EXT);
 const maxAttachmentSize = 10 * 1024 * 1024;
 const maxAttachmentCount = 10;
@@ -269,6 +275,7 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
       TextStyle,
       FontFamily,
       FontSize,
+      Color,
       Underline,
       TextAlign.configure({ types: ["paragraph"] }),
       Link.configure({ openOnClick: false }),
@@ -282,6 +289,7 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
   });
   const selectedFontFamily = (editor?.getAttributes("textStyle").fontFamily as string | undefined) ?? "Arial";
   const selectedFontSize = (editor?.getAttributes("textStyle").fontSize as string | undefined) ?? "14px";
+  const selectedTextColor = (editor?.getAttributes("textStyle").color as string | undefined) ?? defaultTextColor;
 
   useEffect(() => {
     editor?.setEditable(!isFormDisabled);
@@ -304,10 +312,10 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
 
   function resetTransientFields(form: HTMLFormElement) {
     const toInput = form.elements.namedItem("to") as HTMLInputElement | null;
+    const fromEmailInput = form.elements.namedItem("from-email-name") as HTMLInputElement | null;
 
     if (toInput) toInput.value = "";
-    if (attachmentsInputRef.current) attachmentsInputRef.current.value = "";
-    if (signatureInputRef.current) signatureInputRef.current.value = "";
+    if (fromEmailInput) fromEmailInput.value = "";
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -456,6 +464,23 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
                         <DropdownMenuItem key={fontSize} onSelect={() => editor?.chain().focus().setFontSize(fontSize).run()} className="justify-center font-inter">
                           <span className="grid w-4 place-items-center">{selectedFontSize === fontSize && <Check className="size-4" />}</span>
                           {fontSize}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button type="button" variant="outline" disabled={isFormDisabled} aria-label="Text color" className="h-11 min-w-16 justify-between gap-2 rounded-2xl bg-card px-3 font-inter font-normal">
+                        <span className="size-4 shrink-0 rounded-full border border-border" style={{ backgroundColor: selectedTextColor }} />
+                        <ChevronDown className="size-4 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-36">
+                      {textColors.map((color) => (
+                        <DropdownMenuItem key={color.value} onSelect={() => editor?.chain().focus().setColor(color.value).run()} className="font-inter">
+                          <span className="grid w-4 place-items-center">{selectedTextColor === color.value && <Check className="size-4" />}</span>
+                          <span className="size-4 shrink-0 rounded-full border border-border" style={{ backgroundColor: color.value }} />
+                          {color.label}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
