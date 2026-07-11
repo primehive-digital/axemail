@@ -12,7 +12,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
     "db:deploy": "prisma db push",
-    "db:init": "prisma db push && prisma generate"
+    "db:init": "prisma db push && prisma generate",
+    "decrypt-mailer-credentials": "tsx src/scripts/decrypt-mailer-credentials.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
