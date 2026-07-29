@@ -4,6 +4,7 @@ import {
   getAllocationManagementDashboard,
   getDashboardMailerStatus,
   getInfrastructureControlDashboard,
+  getOverviewDashboard,
   getUsageLimitsDashboard,
   getUserManagementDashboard,
 } from "@/services/dashboard.service";
@@ -24,6 +25,15 @@ export const getDashboardMailerStatusHandler = asyncHandler(async (request: Requ
 
 export const getUsageLimitsDashboardHandler = asyncHandler(async (_request: Request, response: Response) => {
   response.json({ data: await getUsageLimitsDashboard() });
+});
+
+export const getOverviewDashboardHandler = asyncHandler(async (request: Request, response: Response) => {
+  response.json({
+    data: await getOverviewDashboard({
+      userId: request.auth!.userId,
+      role: request.auth!.role,
+    }),
+  });
 });
 
 export const getUserManagementDashboardHandler = asyncHandler(async (request: Request, response: Response) => {

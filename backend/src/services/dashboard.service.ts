@@ -12,6 +12,81 @@ import { mapMailerType } from "@/utils/enum-mappers";
 
 const mailerTypes = [MailerType.GMAIL, MailerType.DOMAIN, MailerType.MASK] as const;
 
+export async function getOverviewDashboard(input: { userId: string; role: Role }) {
+  const isEmployee = input.role === Role.EMPLOYEE;
+  const todayStart = startOfTodayUtc();
+  const trendStart = new Date(todayStart);
+  trendStart.setUTCDate(trendStart.getUTCDate() - 6);
+  const deliveryScope = isEmployee
+    ? { userId: input.userId }
+    : { user: { role: Role.EMPLOYEE } };
+
+  const [sentTodayRows, trendDeliveries, allocationRows] = await Promise.all([
+    prisma.deliveryRecord.groupBy({
+      by: ["mailerType"],
+      where: {
+        ...deliveryScope,
+        status: DeliveryStatus.SENT,
+        OR: [
+          { sentAt: { gte: todayStart } },
+          { sentAt: null, createdAt: { gte: todayStart } },
+        ],
+      },
+      _count: { _all: true },
+    }),
+    prisma.deliveryRecord.findMany({
+      where: {
+        ...deliveryScope,
+        status: DeliveryStatus.SENT,
+        OR: [
+          { sentAt: { gte: trendStart } },
+          { sentAt: null, createdAt: { gte: trendStart } },
+        ],
+      },
+      select: { mailerType: true, sentAt: true, createdAt: true },
+    }),
+    prisma.userMailerAllocation.groupBy({
+      by: ["mailerType"],
+      where: isEmployee
+        ? { userId: input.userId }
+        : { user: { role: Role.EMPLOYEE } },
+      _sum: { assignedLimit: true },
+    }),
+  ]);
+
+  const sentToday = sentTodayRows.reduce<Record<MailerType, number>>(
+    (totals, row) => {
+      totals[row.mailerType] = row._count._all;
+      return totals;
+    },
+    emptyMailerMap(),
+  );
+  const limits = toNumberMap(allocationRows);
+  const mailers = mailerTypes.map((mailerType) =>
+    buildOverviewMetric(mailerType, sentToday[mailerType], limits[mailerType]),
+  );
+  const collective = mailers.reduce(
+    (total, metric) => ({
+      sentToday: total.sentToday + metric.sentToday,
+      dailyLimit: total.dailyLimit + metric.dailyLimit,
+    }),
+    { sentToday: 0, dailyLimit: 0 },
+  );
+
+  return {
+    scope: isEmployee ? "personal" as const : "team" as const,
+    mailers,
+    collective: {
+      key: "collective" as const,
+      title: "Collective Mail Delivery",
+      ...collective,
+      remaining: Math.max(collective.dailyLimit - collective.sentToday, 0),
+      progress: calculateProgress(collective.sentToday, collective.dailyLimit),
+    },
+    trend: buildDeliveryTrend(trendStart, trendDeliveries),
+  };
+}
+
 export async function getDashboardMailerStatus(input: { userId: string; mailerType: MailerType }) {
   const usage = await buildUserUsage(input.userId);
   const quota = usage.mailerQuotas.find((item) => item.type === mapMailerType(input.mailerType));
@@ -243,6 +318,51 @@ function buildMailerValueMap(rows: Array<{ mailerType: MailerType; assignedLimit
 
 function emptyMailerMap() {
   return { [MailerType.GMAIL]: 0, [MailerType.DOMAIN]: 0, [MailerType.MASK]: 0 };
+}
+
+function buildOverviewMetric(mailerType: MailerType, sentToday: number, dailyLimit: number) {
+  return {
+    key: mapMailerType(mailerType),
+    title: `Mails via ${formatMailerName(mailerType)}`,
+    sentToday,
+    dailyLimit,
+    remaining: Math.max(dailyLimit - sentToday, 0),
+    progress: calculateProgress(sentToday, dailyLimit),
+  };
+}
+
+function calculateProgress(sent: number, limit: number) {
+  return limit > 0 ? Math.round((sent / limit) * 100) : 0;
+}
+
+function buildDeliveryTrend(
+  start: Date,
+  deliveries: Array<{ mailerType: MailerType; sentAt: Date | null; createdAt: Date }>,
+) {
+  const rows = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(start);
+    date.setUTCDate(start.getUTCDate() + index);
+    return {
+      date: date.toISOString().slice(0, 10),
+      label: date.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }),
+      gmail: 0,
+      domain: 0,
+      mask: 0,
+      total: 0,
+    };
+  });
+  const rowByDate = new Map(rows.map((row) => [row.date, row]));
+
+  for (const delivery of deliveries) {
+    const date = (delivery.sentAt ?? delivery.createdAt).toISOString().slice(0, 10);
+    const row = rowByDate.get(date);
+    if (!row) continue;
+    const key = mapMailerType(delivery.mailerType);
+    row[key] += 1;
+    row.total += 1;
+  }
+
+  return rows;
 }
 
 function formatMailerName(mailerType: MailerType) {

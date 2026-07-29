@@ -13,6 +13,7 @@ const publicRoutes = new Set(["/"]);
 
 const roleRoutes: Record<UserRole, string[]> = {
   employee: [
+    "/overview",
     "/outreach",
     "/operations",
     "/usage",
@@ -20,6 +21,7 @@ const roleRoutes: Record<UserRole, string[]> = {
     "/settings",
   ],
   manager: [
+    "/overview",
     "/outreach-enablement/template-governance",
     "/reports/monthly-sending",
     "/administration/user-management",
@@ -28,6 +30,7 @@ const roleRoutes: Record<UserRole, string[]> = {
     "/settings",
   ],
   admin: [
+    "/overview",
     "/outreach-enablement/template-governance",
     "/reports/monthly-sending",
     "/administration",
@@ -118,7 +121,5 @@ function redirectToLogin(request: NextRequest) {
 }
 
 function getDefaultRoute(role: UserRole | null) {
-  if (role === "employee") return "/operations/template-sender";
-  if (role === "manager") return "/outreach-enablement/template-governance";
-  return "/administration/usage-limits";
+  return role ? "/overview" : "/";
 }

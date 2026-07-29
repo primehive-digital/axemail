@@ -5,6 +5,7 @@ import {
   getAllocationManagementDashboardHandler,
   getDashboardMailerStatusHandler,
   getInfrastructureControlDashboardHandler,
+  getOverviewDashboardHandler,
   getUsageLimitsDashboardHandler,
   getUserManagementDashboardHandler,
 } from "@/modules/dashboard/dashboard.controller";
@@ -13,6 +14,7 @@ import { requireAuthenticatedUser, requireRoles } from "@/middleware/auth";
 export const dashboardRouter = Router();
 
 dashboardRouter.get("/dashboard/outreach/:mailerType", requireRoles(Role.EMPLOYEE), getDashboardMailerStatusHandler);
+dashboardRouter.get("/dashboard/overview", requireAuthenticatedUser, getOverviewDashboardHandler);
 dashboardRouter.get("/dashboard/usage-limits", requireRoles(Role.ADMIN), getUsageLimitsDashboardHandler);
 dashboardRouter.get("/dashboard/user-management", requireRoles(Role.ADMIN, Role.MANAGER), getUserManagementDashboardHandler);
 dashboardRouter.get("/dashboard/allocation-management", requireRoles(Role.ADMIN, Role.MANAGER), getAllocationManagementDashboardHandler);

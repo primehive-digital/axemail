@@ -3,6 +3,7 @@ import {
   FileText,
   Files,
   Globe,
+  LayoutDashboard,
   Mail,
   PieChart,
   Gauge,
@@ -35,6 +36,7 @@ const adminManagerRoles = [USER_ROLE.ADMIN, USER_ROLE.MANAGER];
 const allRoles = [USER_ROLE.ADMIN, USER_ROLE.MANAGER, USER_ROLE.EMPLOYEE];
 
 export const DashboardNavigationData: DashboardNavigationEntry[] = [
+  { title: "Overview", href: "/overview", icon: LayoutDashboard, roles: allRoles },
   {
     categoryTitle: "Send Mail",
     items: [
