@@ -48,18 +48,6 @@ enum DeliveryStatus {
   FAILED
 }
 
-enum AutomationWorkerStatus {
-  WORKING
-  PAUSED
-}
-
-enum AutomationLeadStatus {
-  PENDING
-  SENT
-  FAILED
-  SKIPPED
-}
-
 model User {
   id           String                 @id @default(cuid())
   firstName    String
@@ -75,7 +63,6 @@ model User {
   deliveries   DeliveryRecord[]
   sessions     UserSession[]
   templates    EmailTemplate[]
-  createdAutomationWorkers AutomationWorker[] @relation("AutomationWorkerCreator")
 }
 
 model UserSession {
@@ -180,6 +167,8 @@ model DeliveryRecord {
   @@index([deliveryId])
   @@index([userId, mailerType, createdAt])
   @@index([smtpMailerAccountId, createdAt])
+  @@index([status, createdAt])
+  @@index([status, sentAt])
 }
 model EmailTemplate {
   id               String   @id @default(cuid())
@@ -198,61 +187,4 @@ model EmailTemplate {
 
   @@index([createdById])
 }
-model AutomationWorker {
-  id          String                             @id @default(cuid())
-  name        String
-  pseudoName  String
-  status      AutomationWorkerStatus             @default(PAUSED)
-  createdById String?
-  startTime   String
-  createdAt   DateTime                           @default(now())
-  updatedAt   DateTime                           @updatedAt
-  createdBy   User?                              @relation("AutomationWorkerCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  leads       AutomationLead[]
-  allocations AutomationWorkerMailerAllocation[]
-
-  @@index([status])
-}
-
-model AutomationWorkerMailerAllocation {
-  id            String           @id @default(cuid())
-  workerId      String
-  mailerType    MailerType       @map("senderType")
-  assignedLimit Int
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  worker        AutomationWorker @relation(fields: [workerId], references: [id], onDelete: Cascade)
-
-  @@unique([workerId, mailerType])
-  @@index([mailerType])
-}
-
-model AutomationLead {
-  id              String               @id @default(cuid())
-  workerId        String?
-  templateId      String
-  templateKey     String
-  mailerType      MailerType           @map("senderType")
-  fromName        String
-  fromEmail       String?
-  replyTo         String
-  subject         String?
-  previewText     String?
-  recipientEmail  String
-  clientName      String?
-  templateValues  Json
-  status          AutomationLeadStatus @default(PENDING)
-  errorMessage    String?
-  scheduledAt     DateTime
-  sentAt          DateTime?
-  workDate        String
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
-  worker          AutomationWorker?    @relation(fields: [workerId], references: [id], onDelete: SetNull)
-
-  @@index([workerId, workDate])
-  @@index([status, scheduledAt])
-  @@index([templateId])
-}
-
 

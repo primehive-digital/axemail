@@ -13,6 +13,8 @@ import { AppError } from "@/utils/app-error";
 const mailerTypes = [MailerType.GMAIL, MailerType.DOMAIN, MailerType.MASK] as const;
 
 export async function getPerformanceReport(input: {
+  role: Role;
+  userId: string;
   month?: string;
   startDate?: string;
   endDate?: string;
@@ -25,7 +27,9 @@ export async function getPerformanceReport(input: {
 
   const [users, deliveries] = await Promise.all([
     prisma.user.findMany({
-      where: { role: Role.EMPLOYEE },
+      where: input.role === Role.EMPLOYEE
+        ? { id: input.userId, role: Role.EMPLOYEE }
+        : { role: Role.EMPLOYEE },
       include: { allocations: true },
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
     }),

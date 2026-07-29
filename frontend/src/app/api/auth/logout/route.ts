@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { backendFetch } from "@/lib/api-client";
+import { backendFetch } from "@/lib/server/backend-api";
 import { clearAuthCookies, getRefreshTokenFromCookies } from "@/lib/auth/session-cookies";
 
 export async function POST() {

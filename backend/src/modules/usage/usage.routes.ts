@@ -3,8 +3,6 @@ import { Router } from "express";
 
 import {
   assignLimitsHandler,
-  assignWorkerLimitsHandler,
-  getOverviewHandler,
   getMailerAvailabilityHandler,
   getMailerCardsHandler,
   getUsageHandler,
@@ -16,9 +14,6 @@ export const usageRouter = Router();
 usageRouter.get("/usage", requireAuthenticatedUser, getUsageHandler);
 usageRouter.post("/limits/assign", requireRoles(Role.ADMIN, Role.MANAGER), assignLimitsHandler);
 usageRouter.patch("/limits/:userId", requireRoles(Role.ADMIN, Role.MANAGER), assignLimitsHandler);
-usageRouter.post("/worker-limits/assign", requireRoles(Role.ADMIN, Role.MANAGER), assignWorkerLimitsHandler);
-usageRouter.patch("/worker-limits/:workerId", requireRoles(Role.ADMIN, Role.MANAGER), assignWorkerLimitsHandler);
 usageRouter.get("/mailer-cards", requireRoles(Role.EMPLOYEE), getMailerCardsHandler);
-usageRouter.get("/overview", requireAuthenticatedUser, getOverviewHandler);
 usageRouter.get("/mailer-availability/:mailerType", requireRoles(Role.EMPLOYEE), getMailerAvailabilityHandler);
 

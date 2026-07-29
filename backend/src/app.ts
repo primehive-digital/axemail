@@ -4,7 +4,6 @@ import helmet from "helmet";
 
 import { env } from "@/config/env";
 import { authRouter } from "@/modules/auth/auth.routes";
-import { automationRouter } from "@/modules/automation/automation.routes";
 import { dashboardRouter } from "@/modules/dashboard/dashboard.routes";
 import { healthRouter } from "@/modules/health/health.routes";
 import { reportsRouter } from "@/modules/reports/reports.routes";
@@ -44,7 +43,6 @@ export function createApp() {
   app.use("/api", healthRouter);
   app.use("/api", authRouter);
   app.use("/api", usersRouter);
-  app.use("/api", automationRouter);
   app.use("/api", dashboardRouter);
   app.use("/api", usageRouter);
   app.use("/api", reportsRouter);

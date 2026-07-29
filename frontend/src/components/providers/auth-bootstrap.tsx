@@ -8,8 +8,6 @@ import { getCurrentSession } from "@/lib/auth/auth-api";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { clearCredentials, setCurrentUser } from "@/store/slices/auth-slice";
 
-const sessionCheckIntervalMs = 30000;
-
 export function AuthBootstrap() {
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -58,12 +56,6 @@ export function AuthBootstrap() {
       router.refresh();
     }
 
-    void verifySession();
-
-    const intervalId = window.setInterval(() => {
-      void verifySession();
-    }, sessionCheckIntervalMs);
-
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         void verifySession();
@@ -75,7 +67,6 @@ export function AuthBootstrap() {
 
     return () => {
       isMounted = false;
-      window.clearInterval(intervalId);
       window.removeEventListener("focus", verifySession);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };

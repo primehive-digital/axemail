@@ -13,23 +13,23 @@ const publicRoutes = new Set(["/"]);
 
 const roleRoutes: Record<UserRole, string[]> = {
   employee: [
-    "/overview",
     "/outreach",
     "/operations",
-    "/analytics/activity-insights",
+    "/usage",
+    "/reports/monthly-sending",
     "/settings",
   ],
   manager: [
-    "/overview",
-    "/outreach-enablement",
-    "/analytics/activity-insights",
+    "/outreach-enablement/template-governance",
+    "/reports/monthly-sending",
     "/administration/user-management",
     "/administration/allocation-management",
+    "/administration/mailer-customization",
     "/settings",
   ],
   admin: [
-    "/overview",
-    "/analytics",
+    "/outreach-enablement/template-governance",
+    "/reports/monthly-sending",
     "/administration",
     "/settings",
   ],
@@ -41,7 +41,7 @@ export function proxy(request: NextRequest) {
   const isPublicRoute = publicRoutes.has(pathname);
 
   if (isPublicRoute && session.isAuthenticated) {
-    return NextResponse.redirect(new URL("/overview", request.url));
+    return NextResponse.redirect(new URL(getDefaultRoute(session.role), request.url));
   }
 
   if (!isPublicRoute && !session.isAuthenticated) {
@@ -49,7 +49,7 @@ export function proxy(request: NextRequest) {
   }
 
   if (!isPublicRoute && session.role && !isRouteAllowed(pathname, session.role)) {
-    return NextResponse.redirect(new URL("/overview", request.url));
+    return NextResponse.redirect(new URL(getDefaultRoute(session.role), request.url));
   }
 
   return NextResponse.next();
@@ -115,4 +115,10 @@ function redirectToLogin(request: NextRequest) {
   });
 
   return response;
+}
+
+function getDefaultRoute(role: UserRole | null) {
+  if (role === "employee") return "/operations/template-sender";
+  if (role === "manager") return "/outreach-enablement/template-governance";
+  return "/administration/usage-limits";
 }

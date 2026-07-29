@@ -1,5 +1,3 @@
-﻿const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
-
 export type ApiEnvelope<T> = {
   data: T;
 };
@@ -12,24 +10,6 @@ export class ApiRequestError extends Error {
     super(message);
     this.name = "ApiRequestError";
   }
-}
-
-export async function backendFetch<T>(path: string, init?: RequestInit) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
-    cache: "no-store",
-  });
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new ApiRequestError(extractApiErrorMessage(payload), response.status);
-  }
-
-  return payload as ApiEnvelope<T>;
 }
 
 export function extractApiErrorMessage(payload: unknown, fallback = "Request failed.") {
@@ -58,6 +38,7 @@ export function extractApiErrorMessage(payload: unknown, fallback = "Request fai
 
   return fallback;
 }
+
 function extractValidationDetailMessage(details: unknown) {
   if (!details || typeof details !== "object") {
     return null;
@@ -80,5 +61,3 @@ function extractValidationDetailMessage(details: unknown) {
 function formatFieldName(value: string) {
   return value.replace(/([A-Z])/g, " $1").replace(/^./, (letter) => letter.toUpperCase());
 }
-
-

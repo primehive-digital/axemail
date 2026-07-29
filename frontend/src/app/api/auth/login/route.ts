@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { backendFetch } from "@/lib/api-client";
+import { backendFetch } from "@/lib/server/backend-api";
 import { setAuthCookies } from "@/lib/auth/session-cookies";
 import type { AuthSession } from "@/lib/auth/types";
 

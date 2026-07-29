@@ -17,8 +17,12 @@ const emailListSchema = z
   .string()
   .trim()
   .min(1)
-  .refine((value) => splitEmailList(value).every((email) => emailRegex.test(email)), {
-    message: "Invalid email address list.",
+  .max(10_000)
+  .refine((value) => {
+    const recipients = splitEmailList(value);
+    return recipients.length > 0 && recipients.length <= 500 && recipients.every((email) => emailRegex.test(email));
+  }, {
+    message: "Enter no more than 500 valid email addresses.",
   });
 
 const optionalEmailListSchema = z
@@ -69,6 +73,7 @@ const contentSchema = z
   .string()
   .trim()
   .min(1)
+  .max(250_000)
   .refine((value) => stripHtml(value).length > 0, {
     message: "Content is required.",
   });
@@ -79,8 +84,8 @@ const baseMailerSchema = {
   replyTo: basicEmailSchema,
   cc: optionalEmailListSchema,
   bcc: optionalEmailListSchema,
-  subject: z.string().trim().min(1),
-  previewText: z.string().trim().optional(),
+  subject: z.string().trim().min(1).max(180),
+  previewText: z.string().trim().max(300).optional(),
   attachments: attachmentsSchema,
   content: contentSchema,
 };

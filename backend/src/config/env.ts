@@ -3,42 +3,42 @@ import { z } from "zod";
 
 config();
 
-const rawEnv = {
-  ...process.env,
-  MASK_MAILER_API_URL: process.env.MASK_MAILER_API_URL || process.env.MASK_SENDER_API_URL,
-  MASK_MAILER_HEALTHCHECK_URL: process.env.MASK_MAILER_HEALTHCHECK_URL || process.env.MASK_SENDER_HEALTHCHECK_URL,
-};
-
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  PORT: z.coerce.number().int().positive().default(8080),
+  NODE_ENV: z.enum(["development", "test", "production"]),
+  PORT: z.coerce.number().int().positive(),
   DATABASE_URL: z.string().min(1),
-  FRONTEND_URL: z.string().url().default("https://axemail.cloud"),
+  FRONTEND_URL: z.string().url(),
   JWT_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.string().default("8h"),
-  JWT_REFRESH_EXPIRES_IN: z.string().default("8h"),
-  SESSION_RETENTION_DAYS: z.coerce.number().int().min(1).max(7).default(3),
-  RATE_LIMIT_WINDOW: z.coerce.number().int().positive().default(100),
-  MASK_MAILER_API_URL: z.string().url().default("https://api.axemail.cloud"),
-  MASK_MAILER_HEALTHCHECK_URL: z.string().url().optional(),
-  ENCRYPTION_KEY: z.string().length(64),
-  GMAIL_COOLDOWN_SECONDS: z.string().default("20,35,50,70,90"),
-  DOMAIN_COOLDOWN_SECONDS: z.string().default("20,35,50,70,90"),
+  JWT_EXPIRES_IN: z.string().min(1),
+  JWT_REFRESH_EXPIRES_IN: z.string().min(1),
+  SESSION_RETENTION_DAYS: z.coerce.number().int().min(1).max(7),
+  RATE_LIMIT_WINDOW: z.coerce.number().int().positive(),
+  MASK_MAILER_API_URL: z.string().url(),
+  MASK_MAILER_HEALTHCHECK_URL: z.string().url(),
+  ENCRYPTION_KEY: z.string().regex(/^[0-9a-fA-F]{64}$/u, "Must be exactly 64 hexadecimal characters."),
+  GMAIL_COOLDOWN_SECONDS: z.string().min(1),
+  DOMAIN_COOLDOWN_SECONDS: z.string().min(1),
 });
 
-const parsed = envSchema.safeParse(rawEnv);
+const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
   console.error(parsed.error.flatten().fieldErrors);
   throw new Error("Invalid environment configuration.");
 }
 
+if (parsed.data.NODE_ENV === "production") {
+  if (parsed.data.JWT_SECRET.toLowerCase().includes("replace") || parsed.data.JWT_SECRET.toLowerCase().includes("local-development")) {
+    throw new Error("JWT_SECRET must be a production secret.");
+  }
+  if (/^(.)\1{63}$/u.test(parsed.data.ENCRYPTION_KEY)) {
+    throw new Error("ENCRYPTION_KEY must be a production encryption key.");
+  }
+}
+
 export const env = {
   ...parsed.data,
   MASK_MAILER_SEND_URL: resolveMaskMailerSendUrl(parsed.data.MASK_MAILER_API_URL),
-  MASK_MAILER_HEALTHCHECK_URL:
-    parsed.data.MASK_MAILER_HEALTHCHECK_URL ??
-    new URL("/health", parsed.data.MASK_MAILER_API_URL).toString(),
   GMAIL_COOLDOWN_SCHEDULE: parsed.data.GMAIL_COOLDOWN_SECONDS.split(",")
     .map((value) => Number(value.trim()))
     .filter((value) => Number.isFinite(value) && value > 0),

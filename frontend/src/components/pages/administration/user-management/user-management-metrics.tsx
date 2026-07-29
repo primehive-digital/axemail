@@ -1,7 +1,7 @@
 import { MetricCard } from "@/components/shared/metric-card";
 import type { UserManagementMetric } from "@/lib/user-management/user-management-api";
 
-const metricOrder = ["totalUsers", "totalManagers", "totalEmployees", "totalBots"];
+const metricOrder = ["totalUsers", "totalManagers", "totalEmployees"];
 
 const metricIcons: Record<string, { iconSrc: string; iconAlt: string; badgeTone: "blue" | "emerald" | "violet" | "amber" }> = {
   totalUsers: {
@@ -19,24 +19,10 @@ const metricIcons: Record<string, { iconSrc: string; iconAlt: string; badgeTone:
     iconAlt: "Total employees",
     badgeTone: "emerald",
   },
-  totalBots: {
-    iconSrc: "/icons/active-sessions-icon.png",
-    iconAlt: "Total bots",
-    badgeTone: "amber",
-  },
 };
 
-function buildBotMetric(botCount: number): UserManagementMetric {
-  return {
-    key: "totalBots",
-    title: "Total Bots",
-    label: "Bots",
-    value: botCount,
-  };
-}
-
-export function UserManagementMetrics({ metrics, botCount }: { metrics: UserManagementMetric[]; botCount: number }) {
-  const visibleMetrics = [...metrics, buildBotMetric(botCount)].sort(
+export function UserManagementMetrics({ metrics }: { metrics: UserManagementMetric[] }) {
+  const visibleMetrics = [...metrics].sort(
     (left, right) => metricOrder.indexOf(left.key) - metricOrder.indexOf(right.key),
   );
 

@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ApiRequestError, extractApiErrorMessage } from "@/lib/api-client";
 import { getAccessTokenFromCookies } from "@/lib/auth/session-cookies";
 import { routeErrorResponse } from "@/lib/server/authenticated-backend-fetch";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+import { BACKEND_API_BASE_URL } from "@/lib/server/backend-api";
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     const query = request.nextUrl.searchParams.toString();
-    const response = await fetch(`${API_BASE_URL}/api/reports/employee-performance/export${query ? `?${query}` : ""}`, {
+    const response = await fetch(`${BACKEND_API_BASE_URL}/api/reports/employee-performance/export${query ? `?${query}` : ""}`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },

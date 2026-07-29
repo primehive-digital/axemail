@@ -12,6 +12,7 @@ const googleSans = Google_Sans({
   variable: "--font-google-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  adjustFontFallback: false,
 });
 const inter = Inter({
   variable: "--font-inter",
@@ -25,14 +26,13 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Axemail | Trademark Campaign Tool",
-  description:
-    "Internal campaign operations platform for managing trademark workflows, lead pipelines, outreach systems, cases, documents, and execution tracking.",
+  title: "Axemail | Email Sending Platform",
+  description: "Internal email platform for templates, Gmail, domain and mask sending, user limits, SMTP configuration, and monthly delivery reports.",
 
   icons: {
-    icon: "/frontend/public/favicons/favicon.ico",
-    shortcut: "/frontend/public/favicons/favicon.ico",
-    apple: "/frontend/public/favicons/apple-icon.png",
+    icon: "/favicons/favicon.ico",
+    shortcut: "/favicons/favicon.ico",
+    apple: "/favicons/apple-icon.png",
   },
 };
 export const viewport: Viewport = {

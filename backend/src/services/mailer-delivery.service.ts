@@ -8,6 +8,7 @@ import { resolveUserContext } from "@/services/context.service";
 import { dispatchMessage } from "@/services/mailer-dispatch.service";
 import { getMaskServerHealth } from "@/services/mask-server.service";
 import { assertReplyToAllowed, getMailerCooldownSchedule } from "@/services/mailer-customization.service";
+import { cleanupExpiredDeliveryRecordsOncePerDay } from "@/services/report-retention.service";
 import type { MailerComposerPayload } from "@/types/mailer.types";
 import { AppError } from "@/utils/app-error";
 import { startOfTodayUtc } from "@/utils/date";
@@ -18,6 +19,9 @@ const reservedDeliveryStatuses = [
 ] as const;
 
 export async function sendComposerCampaign(input: MailerComposerPayload) {
+  void cleanupExpiredDeliveryRecordsOncePerDay().catch((error) => {
+    console.error("Delivery retention cleanup failed.", error);
+  });
   const user = await resolveUserContext({ role: input.role, userId: input.userId });
   await assertReplyToAllowed({ mailerType: input.mailerType.toUpperCase() as MailerType, replyTo: input.replyTo });
   const deliveryId = crypto.randomUUID();

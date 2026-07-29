@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { ApiRequestError, backendFetch } from "@/lib/api-client";
+import { ApiRequestError } from "@/lib/api-client";
 import { getAccessTokenFromCookies } from "@/lib/auth/session-cookies";
+import { backendFetch } from "@/lib/server/backend-api";
 
 export async function authenticatedBackendFetch<T>(path: string, init?: RequestInit) {
   const accessToken = await getAccessTokenFromCookies();

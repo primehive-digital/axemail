@@ -4,6 +4,13 @@ import { toPrismaMailerType } from "@/utils/enum-mappers";
 
 const mailerTypeSchema = z.enum(["gmail", "domain", "mask"]).transform(toPrismaMailerType);
 const maskEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
+const emailListSchema = z.string().trim().min(1).max(10_000).refine(
+  (value) => {
+    const recipients = value.split(",").map((item) => item.trim()).filter(Boolean);
+    return recipients.length > 0 && recipients.length <= 500 && recipients.every((email) => maskEmailRegex.test(email));
+  },
+  { message: "Enter between 1 and 500 valid recipient email addresses." },
+);
 
 export const templateIdSchema = z.object({
   templateId: z.string().min(1),
@@ -25,7 +32,7 @@ export const templateFieldSchema = z.object({
 export const createTemplateSchema = z.object({
   name: z.string().trim().min(1).max(120),
   subject: z.string().trim().min(1).max(180),
-  contentHtml: z.string().trim().min(1),
+  contentHtml: z.string().trim().min(1).max(250_000),
   supportedMailers: z.array(mailerTypeSchema).min(1).max(3),
   fields: z.array(templateFieldSchema).max(24).default([]),
 });
@@ -43,7 +50,7 @@ const sendTemplateBaseSchema = z.object({
   mailerType: mailerTypeSchema,
   fromName: z.string().trim().min(1),
   fromEmail: z.string().trim().optional(),
-  to: z.string().trim().min(1),
+  to: emailListSchema,
   replyTo: z.string().trim().email(),
   previewText: z.string().trim().optional(),
   templateValues: z.record(z.string(), z.string().trim()).default({}),

@@ -9,6 +9,8 @@ export const getPerformanceReportHandler = asyncHandler(async (request: Request,
   const query = performanceReportQuerySchema.parse(request.query);
   response.json({
     data: await getPerformanceReport({
+      role: request.auth!.role,
+      userId: request.auth!.userId,
       month: query.month,
       startDate: query.startDate,
       endDate: query.endDate,
@@ -19,6 +21,8 @@ export const getPerformanceReportHandler = asyncHandler(async (request: Request,
 export const exportPerformanceReportHandler = asyncHandler(async (request: Request, response: Response) => {
   const query = performanceReportExportQuerySchema.parse(request.query);
   const report = await getPerformanceReport({
+    role: request.auth!.role,
+    userId: request.auth!.userId,
     month: query.month,
     startDate: query.startDate,
     endDate: query.endDate,

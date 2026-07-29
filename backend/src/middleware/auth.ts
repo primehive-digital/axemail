@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Role, UserStatus } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 
 import { prisma } from "@/config/prisma";
@@ -68,5 +68,9 @@ async function ensureAuthenticatedSession(request: Request) {
 
   if (!session.user) {
     throw new AppError("User account is not available.", 403);
+  }
+
+  if (session.user.status !== UserStatus.ACTIVE) {
+    throw new AppError("User account is not active.", 403);
   }
 }

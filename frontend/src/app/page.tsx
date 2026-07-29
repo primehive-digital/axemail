@@ -29,7 +29,14 @@ function LoginPage() {
     onSuccess: (session) => {
       dispatch(setCurrentUser(session.data.user));
       toast.success("Logged in successfully.");
-      router.replace("/overview");
+      const role = session.data.user?.role;
+      router.replace(
+        role === "employee"
+          ? "/operations/template-sender"
+          : role === "manager"
+            ? "/outreach-enablement/template-governance"
+            : "/administration/usage-limits",
+      );
       router.refresh();
     },
     onError: (error) => {

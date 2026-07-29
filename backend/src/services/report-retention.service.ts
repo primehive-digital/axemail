@@ -1,6 +1,7 @@
 import { prisma } from "@/config/prisma";
 
 let cleanupPromise: Promise<number> | null = null;
+let lastDailyCleanupKey: string | null = null;
 
 export async function cleanupExpiredDeliveryRecords() {
   if (!cleanupPromise) {
@@ -23,16 +24,16 @@ export async function cleanupExpiredDeliveryRecords() {
   return cleanupPromise;
 }
 
-export function startReportRetentionSchedule() {
-  void cleanupExpiredDeliveryRecords().catch((error) => {
-    console.error("Report retention cleanup failed.", error);
-  });
+export async function cleanupExpiredDeliveryRecordsOncePerDay(now = new Date()) {
+  const cleanupKey = now.toISOString().slice(0, 10);
 
-  return setInterval(() => {
-    void cleanupExpiredDeliveryRecords().catch((error) => {
-      console.error("Report retention cleanup failed.", error);
-    });
-  }, 24 * 60 * 60 * 1000);
+  if (lastDailyCleanupKey === cleanupKey) {
+    return 0;
+  }
+
+  const deleted = await cleanupExpiredDeliveryRecords();
+  lastDailyCleanupKey = cleanupKey;
+  return deleted;
 }
 
 function getRetentionCutoff(now: Date) {
