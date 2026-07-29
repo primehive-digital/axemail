@@ -2,9 +2,10 @@
 
 import { useState, type ReactNode } from "react";
 import toast from "react-hot-toast";
-import { Check, ChevronDown, FileCode2, FileText, Globe2, LoaderCircle, Mail, Plus, Shield, Tag, Trash2, Type } from "lucide-react";
+import { Check, ChevronDown, FileCode2, FileText, Globe2, LoaderCircle, Mail, Plus, Shield, Tag, Type } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { TableActionButton } from "@/components/shared/table-actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -162,9 +163,7 @@ export function TemplateFormDialog({ mode, trigger, template, open: controlledOp
                       <Checkbox checked={field.required} onCheckedChange={(checked) => updateField(index, { required: checked === true })} />
                       Required
                     </label>
-                    <Button type="button" variant="destructive" size="icon" disabled={form.fields.length === 1} onClick={() => removeField(index)} className="size-9 rounded-full bg-red-100 text-destructive hover:bg-red-200">
-                      <Trash2 className="size-4" />
-                    </Button>
+                    <TableActionButton action="delete" label="Remove" disabled={form.fields.length === 1} onClick={() => removeField(index)} />
                   </div>
                 </div>
               ))}

@@ -8,12 +8,12 @@ import {
   IdCard,
   LoaderCircle,
   LockKeyhole,
-  Pencil,
   User,
   UserRound,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { TableActionButton } from "@/components/shared/table-actions";
 import {
   Dialog,
   DialogContent,
@@ -146,14 +146,7 @@ export function EditAccountDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button
-          type="button"
-          size="icon-sm"
-          aria-label={`Edit ${user.firstName} ${user.lastName}`}
-          className="rounded-full bg-emerald-600 text-white shadow-sm shadow-emerald-600/10 hover:bg-emerald-700 hover:shadow-md hover:shadow-emerald-600/20"
-        >
-          <Pencil className="size-4" />
-        </Button>
+        <TableActionButton action="edit" aria-label={`Edit ${user.firstName} ${user.lastName}`} />
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

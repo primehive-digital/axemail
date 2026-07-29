@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, ChevronDown, Globe, LoaderCircle, Mail, PencilLine, Shield, UserRound } from "lucide-react";
+import { Check, ChevronDown, Globe, LoaderCircle, Mail, Shield, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { TableActionButton } from "@/components/shared/table-actions";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -136,10 +137,7 @@ export function AllocationLimitDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="h-10 rounded-full border-none bg-black px-4 font-google-sans shadow-sm shadow-black/10 transition-all duration-200 ease-in-out hover:bg-black/80 hover:shadow-md hover:shadow-black/20">
-          <PencilLine className="size-4" />
-          Assign / Edit Limits
-        </Button>
+        <TableActionButton action="edit" label="Assign / Edit Limits" className="h-10 px-4 text-sm" />
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

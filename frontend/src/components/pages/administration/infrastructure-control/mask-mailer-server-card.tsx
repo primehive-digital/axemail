@@ -1,6 +1,6 @@
-import { Activity, Clock3, Link, LoaderCircle, PlugZap, ServerCrash } from "lucide-react";
+import { Activity, Clock3, Link, ServerCrash } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { TableActionButton } from "@/components/shared/table-actions";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { MaskServerHealth } from "@/lib/infrastructure-control/infrastructure-control-api";
 
@@ -72,10 +72,7 @@ export function MaskMailerServerCard({
             <p className="font-inter text-sm text-muted-foreground">Validate backend connectivity to the mask delivery endpoint.</p>
           </div>
 
-          <Button type="button" disabled={isTesting} className="h-10 rounded-full border-none bg-primary px-4 font-google-sans shadow-sm shadow-[#2e5fa2]/10 transition-all duration-200 ease-in-out hover:bg-primary-hover hover:shadow-md hover:shadow-[#2e5fa2]/20 disabled:cursor-not-allowed disabled:opacity-70" onClick={() => onTest()}>
-            {isTesting ? <LoaderCircle className="size-4 animate-spin" /> : <PlugZap className="size-4" />}
-            Test Server
-          </Button>
+          <TableActionButton action="test" label="Test Server" isPending={isTesting} className="h-10 px-4 text-sm" onClick={() => onTest()} />
         </div>
       </CardHeader>
 

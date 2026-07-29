@@ -5,7 +5,6 @@ import { RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { UserDirectoryTableCard } from "@/components/pages/administration/user-management/user-directory-table-card";
-import { UserManagementMetrics } from "@/components/pages/administration/user-management/user-management-metrics";
 import { Button } from "@/components/ui/button";
 import { USER_ROLE } from "@/constants/enum";
 import {
@@ -56,8 +55,8 @@ export function UserManagementDashboard() {
   const isRefreshing = query.isFetching && !query.isLoading;
 
   return (
-    <div className="flex flex-1 flex-col gap-12 p-4 lg:p-6">
-      <section className="space-y-4">
+    <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
+      <section>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="font-google-sans text-2xl font-semibold text-heading">User Management</h1>
@@ -68,7 +67,6 @@ export function UserManagementDashboard() {
             <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
           </Button>
         </div>
-        <UserManagementMetrics metrics={query.data?.metrics ?? []} />
       </section>
 
       <UserDirectoryTableCard

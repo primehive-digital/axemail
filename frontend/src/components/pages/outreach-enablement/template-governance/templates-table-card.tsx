@@ -1,87 +1,100 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Copy, FileText } from "lucide-react";
 import toast from "react-hot-toast";
-import { Copy, Edit3, FileText, LoaderCircle, Trash2 } from "lucide-react";
 
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  ProfessionalTableEmpty,
+  ProfessionalTablePagination,
+  ProfessionalTableViewport,
+  tableCellClassName,
+  tableClassName,
+  tableHeaderCellClassName,
+  tableHeaderRowClassName,
+  tableRowClassName,
+  useTablePagination,
+} from "@/components/shared/professional-table";
+import { ConfirmTableAction, TableActionButton } from "@/components/shared/table-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { EmailTemplate } from "@/lib/templates/templates-api";
+import { cn } from "@/lib/utils";
 
-const pageSize = 5;
-
-export function TemplatesTableCard({ templates, isLoading, onEdit, onDelete, deletingTemplateId }: { templates: EmailTemplate[]; isLoading?: boolean; onEdit: (template: EmailTemplate) => void; onDelete: (templateId: string) => void; deletingTemplateId?: string }) {
-  const [page, setPage] = useState(1);
-  const totalPages = Math.max(Math.ceil(templates.length / pageSize), 1);
-  const rows = useMemo(() => templates.slice((page - 1) * pageSize, page * pageSize), [page, templates]);
+export function TemplatesTableCard({
+  templates,
+  isLoading,
+  onEdit,
+  onDelete,
+  deletingTemplateId,
+}: {
+  templates: EmailTemplate[];
+  isLoading?: boolean;
+  onEdit: (template: EmailTemplate) => void;
+  onDelete: (templateId: string) => void;
+  deletingTemplateId?: string;
+}) {
+  const pagination = useTablePagination(templates);
 
   return (
     <Card className="gap-0 rounded-xl border border-border bg-card py-0 shadow-sm shadow-black/5 ring-0">
-      <CardHeader className="border-b px-5 py-4 pt-6">
-        <div>
-          <h2 className="font-google-sans text-xl font-semibold text-heading">Template Directory</h2>
-          <p className="font-inter text-sm text-muted-foreground">Manage reusable template content, fields, template IDs, and mailer availability.</p>
-        </div>
+      <CardHeader className="border-b px-5 py-5">
+        <h2 className="font-google-sans text-xl font-semibold text-heading">Template Directory</h2>
+        <p className="font-inter text-sm text-muted-foreground">Manage reusable content, template IDs, and sender availability.</p>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1080px] border-collapse">
+        <ProfessionalTableViewport>
+          <table className={cn(tableClassName, "min-w-260")}>
             <thead>
-              <tr className="border-b bg-secondary/60 text-left font-google-sans text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                <th className="px-5 py-4">Template</th>
-                <th className="px-5 py-4">Template ID</th>
-                <th className="px-5 py-4">Mailers</th>
-                <th className="px-5 py-4">Actions</th>
+              <tr className={tableHeaderRowClassName}>
+                {["Template", "Template ID", "Mailers", "Actions"].map((heading) => (
+                  <th key={heading} className={tableHeaderCellClassName}>{heading}</th>
+                ))}
               </tr>
             </thead>
-            <tbody className="h-[340px] align-top">
+            <tbody>
               {isLoading ? (
-                <tr>
-                  <td colSpan={4} className="px-5 py-16 text-center">
-                    <span className="inline-flex items-center gap-2 font-inter text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" /> Loading templates...</span>
+                <ProfessionalTableEmpty colSpan={4} message="Loading templates" isLoading />
+              ) : pagination.visibleRows.length === 0 ? (
+                <ProfessionalTableEmpty colSpan={4} message="No templates found." />
+              ) : pagination.visibleRows.map((template) => (
+                <tr key={template.id} className={tableRowClassName}>
+                  <td className={tableCellClassName}>
+                    <div className="flex items-center gap-3">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-slate-50 text-slate-600">
+                        <FileText className="size-4" />
+                      </span>
+                      <p className="truncate font-google-sans text-sm font-semibold text-heading">{template.name}</p>
+                    </div>
+                  </td>
+                  <td className={tableCellClassName}><TemplateIdCell id={template.id} /></td>
+                  <td className={tableCellClassName}>
+                    <div className="flex flex-wrap gap-2">
+                      {template.supportedMailers.map((mailer) => <MailerBadge key={mailer}>{mailer}</MailerBadge>)}
+                    </div>
+                  </td>
+                  <td className={tableCellClassName}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <TableActionButton action="edit" onClick={() => onEdit(template)} />
+                      <ConfirmTableAction
+                        action="delete"
+                        title="Delete template?"
+                        description={<>This permanently removes {template.name}; employees will no longer be able to send it.</>}
+                        confirmLabel="Delete Template"
+                        isPending={deletingTemplateId === template.id}
+                        onConfirm={() => onDelete(template.id)}
+                      />
+                    </div>
                   </td>
                 </tr>
-              ) : rows.length ? (
-                rows.map((template) => (
-                  <tr key={template.id} className="border-b last:border-b-0">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <span className="grid size-10 shrink-0 place-items-center rounded-full border border-border bg-secondary text-heading"><FileText className="size-4" /></span>
-                        <div className="min-w-0">
-                          <p className="truncate font-google-sans text-sm font-semibold text-heading">{template.name}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <TemplateIdCell id={template.id} />
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        {template.supportedMailers.map((mailer) => <MailerBadge key={mailer}>{mailer}</MailerBadge>)}
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <Button type="button" size="icon" onClick={() => onEdit(template)} className="size-9 rounded-full border-none bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 transition-all hover:bg-emerald-500 hover:shadow-md"><Edit3 className="size-4" /></Button>
-                        <DeleteTemplateAlert template={template} onDelete={onDelete} isPending={deletingTemplateId === template.id} />
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={4} className="px-5 py-16 text-center font-inter text-sm text-muted-foreground">No templates found.</td>
-                </tr>
-              )}
+              ))}
             </tbody>
           </table>
-        </div>
-        <div className="flex items-center justify-end gap-2 border-t px-5 py-4">
-          <Button type="button" variant="ghost" size="icon" disabled={page === 1} onClick={() => setPage((value) => Math.max(value - 1, 1))} className="size-9 rounded-full">Prev</Button>
-          <span className="grid size-9 place-items-center rounded-md bg-black font-google-sans text-sm font-semibold text-white">{page}</span>
-          <Button type="button" variant="ghost" size="icon" disabled={page === totalPages} onClick={() => setPage((value) => Math.min(value + 1, totalPages))} className="size-9 rounded-full">Next</Button>
-        </div>
+        </ProfessionalTableViewport>
+        <ProfessionalTablePagination
+          page={pagination.activePage}
+          pageCount={pagination.pageCount}
+          onPageChange={pagination.setPage}
+        />
       </CardContent>
     </Card>
   );
@@ -94,40 +107,15 @@ function TemplateIdCell({ id }: { id: string }) {
   }
 
   return (
-    <div className="flex max-w-64 items-center gap-2 rounded-sm border border-border bg-secondary/60 px-3 py-2">
+    <div className="flex max-w-64 items-center gap-2 rounded-md border border-border bg-slate-50 px-3 py-2">
       <code className="min-w-0 flex-1 truncate font-mono text-xs text-heading">{id}</code>
-      <Button type="button" size="icon-sm" variant="ghost" aria-label="Copy template ID" onClick={copyTemplateId} className="size-7 shrink-0 rounded-full">
+      <Button type="button" size="icon-sm" variant="ghost" aria-label="Copy template ID" onClick={copyTemplateId} className="size-7 shrink-0 rounded-md">
         <Copy className="size-3.5" />
       </Button>
     </div>
   );
 }
 
-function DeleteTemplateAlert({ template, onDelete, isPending }: { template: EmailTemplate; onDelete: (templateId: string) => void; isPending?: boolean }) {
-  return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button type="button" size="icon" className="size-9 rounded-full border-none bg-red-100 text-destructive shadow-sm shadow-red-600/10 transition-all hover:bg-red-200 hover:shadow-md"><Trash2 className="size-4" /></Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent className="rounded-2xl border border-border bg-popover p-6 shadow-2xl shadow-black/20 sm:max-w-md">
-        <AlertDialogHeader className="place-items-start text-left">
-          <AlertDialogMedia className="mb-2 size-12 bg-destructive/10 text-destructive max-md:hidden"><Trash2 className="size-5" /></AlertDialogMedia>
-          <AlertDialogTitle className="font-google-sans text-xl font-semibold text-heading">Are you sure you want to delete this template?</AlertDialogTitle>
-          <AlertDialogDescription className="font-inter text-sm leading-6 text-muted-foreground">This will permanently remove {template.name} from template governance and employees will no longer be able to send it.</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter className="gap-2">
-          <AlertDialogCancel className="border border-border bg-transparent font-google-sans text-heading shadow-sm shadow-[#f2f4f5]/10 transition-all duration-200 ease-in-out hover:bg-muted hover:text-heading hover:shadow-md hover:shadow-black/20">Cancel</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" disabled={isPending} className="border border-border bg-destructive! font-google-sans text-destructive-foreground shadow-sm shadow-[#e7000b]/10 transition-all duration-200 ease-in-out hover:bg-red-400 hover:shadow-md hover:shadow-[#e7000b]/20" onClick={() => onDelete(template.id)}>
-            {isPending ? <LoaderCircle className="size-4 animate-spin" /> : "Delete Template"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
-
 function MailerBadge({ children }: { children: string }) {
-  return <span className="rounded-full bg-secondary px-3 py-1 font-google-sans text-xs font-semibold capitalize text-heading">{children}</span>;
+  return <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 font-google-sans text-xs font-semibold capitalize text-slate-700">{children}</span>;
 }
-
-

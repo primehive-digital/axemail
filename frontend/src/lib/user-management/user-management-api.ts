@@ -11,15 +11,7 @@ export type UserRecord = {
   status: UserStatus;
 };
 
-export type UserManagementMetric = {
-  key: string;
-  title: string;
-  label: string;
-  value: number;
-};
-
 export type UserManagementDashboardData = {
-  metrics: UserManagementMetric[];
   users: UserRecord[];
 };
 

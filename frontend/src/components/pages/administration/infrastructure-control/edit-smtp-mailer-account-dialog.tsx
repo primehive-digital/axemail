@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, type ComponentType } from "react";
-import { AtSign, Check, ChevronDown, IdCard, LoaderCircle, LockKeyhole, Pencil, Server } from "lucide-react";
+import { AtSign, Check, ChevronDown, IdCard, LoaderCircle, LockKeyhole, Server } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { TableActionButton } from "@/components/shared/table-actions";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -107,9 +108,7 @@ export function EditSmtpMailerAccountDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button type="button" size="icon-sm" aria-label={`Edit ${account.label}`} className="rounded-full bg-emerald-600 text-white shadow-sm shadow-emerald-600/10 hover:bg-emerald-700 hover:shadow-md hover:shadow-emerald-600/20">
-          <Pencil className="size-4" />
-        </Button>
+        <TableActionButton action="edit" aria-label={`Edit ${account.label}`} />
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

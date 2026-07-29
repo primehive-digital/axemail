@@ -4,6 +4,17 @@ import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 
 import { MetricCard } from "@/components/shared/metric-card";
+import {
+  ProfessionalTableEmpty,
+  ProfessionalTablePagination,
+  ProfessionalTableViewport,
+  tableCellClassName,
+  tableClassName,
+  tableHeaderCellClassName,
+  tableHeaderRowClassName,
+  tableRowClassName,
+  useTablePagination,
+} from "@/components/shared/professional-table";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { getUsageLimitsDashboard, type SenderLimit } from "@/lib/usage-limits/usage-limits-api";
 
@@ -21,6 +32,8 @@ const resourceAssets: Record<SenderLimit["key"], { iconSrc: string; iconAlt: str
 
 export function UsageLimitsDashboard() {
   const query = useQuery({ queryKey: ["usage-limits-dashboard"], queryFn: getUsageLimitsDashboard });
+  const limits = query.data?.limits ?? [];
+  const pagination = useTablePagination(limits);
 
   return (
     <div className="flex flex-1 flex-col gap-10 p-4 lg:p-6">
@@ -44,28 +57,33 @@ export function UsageLimitsDashboard() {
           <h2 className="font-google-sans text-xl font-semibold text-heading">Sender Limits</h2>
           <p className="font-inter text-sm text-muted-foreground">Configured capacity for each sender type.</p>
         </CardHeader>
-        <CardContent className="overflow-x-auto p-0">
-          <table className="w-full min-w-180 border-collapse">
-            <thead><tr className="border-b bg-secondary/60">
-              <th className="px-5 py-4 text-left text-xs uppercase text-muted-foreground">Sender</th>
-              <th className="px-5 py-4 text-left text-xs uppercase text-muted-foreground">Per Account</th>
-              <th className="px-5 py-4 text-left text-xs uppercase text-muted-foreground">Per Day</th>
-              <th className="px-5 py-4 text-left text-xs uppercase text-muted-foreground">Per Month</th>
+        <CardContent className="p-0">
+          <ProfessionalTableViewport>
+          <table className={`${tableClassName} min-w-180`}>
+            <thead><tr className={tableHeaderRowClassName}>
+              <th className={tableHeaderCellClassName}>Sender</th>
+              <th className={tableHeaderCellClassName}>Per Account</th>
+              <th className={tableHeaderCellClassName}>Per Day</th>
+              <th className={tableHeaderCellClassName}>Per Month</th>
             </tr></thead>
             <tbody>
-              {(query.data?.limits ?? []).map((limit) => {
+              {query.isLoading ? <ProfessionalTableEmpty colSpan={4} message="Loading sender limits" isLoading /> :
+              pagination.visibleRows.length === 0 ? <ProfessionalTableEmpty colSpan={4} message="No sender limits found." /> :
+              pagination.visibleRows.map((limit) => {
                 const asset = resourceAssets[limit.key];
                 return (
-                  <tr key={limit.key} className="border-b last:border-0">
-                    <td className="px-5 py-4"><span className="flex items-center gap-3"><Image src={asset.iconSrc} alt={asset.iconAlt} width={24} height={24} /><span><strong className="block text-sm">{limit.resource}</strong><small className="text-muted-foreground">{limit.description}</small></span></span></td>
-                    <td className="px-5 py-4 digits">{limit.perAccount.toLocaleString()}</td>
-                    <td className="px-5 py-4 digits">{limit.perDay.toLocaleString()}</td>
-                    <td className="px-5 py-4 digits">{limit.perMonth.toLocaleString()}</td>
+                  <tr key={limit.key} className={tableRowClassName}>
+                    <td className={tableCellClassName}><span className="flex items-center gap-3"><Image src={asset.iconSrc} alt={asset.iconAlt} width={24} height={24} /><span><strong className="block text-sm">{limit.resource}</strong><small className="text-muted-foreground">{limit.description}</small></span></span></td>
+                    <td className={`${tableCellClassName} digits`}>{limit.perAccount.toLocaleString()}</td>
+                    <td className={`${tableCellClassName} digits`}>{limit.perDay.toLocaleString()}</td>
+                    <td className={`${tableCellClassName} digits`}>{limit.perMonth.toLocaleString()}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+          </ProfessionalTableViewport>
+          <ProfessionalTablePagination page={pagination.activePage} pageCount={pagination.pageCount} onPageChange={pagination.setPage} />
         </CardContent>
       </Card>
     </div>

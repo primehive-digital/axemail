@@ -146,12 +146,7 @@ export async function getUsageLimitsDashboard() {
 }
 
 export async function getUserManagementDashboard(actorRole: Role) {
-  const [users, metrics] = await Promise.all([
-    listUsers(actorRole),
-    getUserMetrics(actorRole),
-  ]);
-
-  return { metrics, users };
+  return { users: await listUsers(actorRole) };
 }
 
 export async function getAllocationManagementDashboard() {
@@ -274,19 +269,6 @@ async function getAllocationRows() {
       total: allocation.gmail + allocation.domain + allocation.mask,
     };
   });
-}
-
-async function getUserMetrics(actorRole: Role) {
-  const where = actorRole === Role.MANAGER
-    ? { role: Role.EMPLOYEE }
-    : { role: { in: [Role.MANAGER, Role.EMPLOYEE] } };
-  const users = await prisma.user.findMany({ where });
-
-  return [
-    { key: "totalUsers", title: "Total Users", label: "Accounts", value: users.length },
-    { key: "totalManagers", title: "Total Managers", label: "Managers", value: users.filter((user) => user.role === Role.MANAGER).length },
-    { key: "totalEmployees", title: "Total Employees", label: "Employees", value: users.filter((user) => user.role === Role.EMPLOYEE).length },
-  ];
 }
 
 function buildResourceLimit(key: "gmail" | "domain" | "mask", resource: string, description: string, perAccount: number, perDay: number) {
