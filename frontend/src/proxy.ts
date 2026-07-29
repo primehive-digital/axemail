@@ -17,7 +17,6 @@ const roleRoutes: Record<UserRole, string[]> = {
     "/outreach",
     "/operations",
     "/usage",
-    "/reports/monthly-sending",
     "/settings",
   ],
   manager: [

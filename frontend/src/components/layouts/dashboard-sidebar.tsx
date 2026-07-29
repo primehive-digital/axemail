@@ -9,16 +9,12 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import {
-  getDashboardNavigationByRole,
-  isDashboardNavigationGroup,
-} from "@/constants/dashboard-navigation";
+import { getDashboardNavigationByRole } from "@/constants/dashboard-navigation";
 import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/store/hooks";
 
@@ -78,72 +74,33 @@ export function DashboardSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {navigation.map((entry) =>
-          isDashboardNavigationGroup(entry) ? (
-            <SidebarGroup key={entry.categoryTitle}>
-              <SidebarGroupLabel className="text-primary font-google-sans font-bold uppercase">
-                {entry.categoryTitle}
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {entry.items.map((item) => {
-                    const Icon = item.icon;
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-1">
+              {navigation.map((item) => {
+                const Icon = item.icon;
 
-                    return (
-                      <SidebarMenuItem key={item.href}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive(item.href)}
-                          tooltip={item.title}
-                          className={getNavigationButtonClassName(item.href)}
-                        >
-                          <Link href={item.href}>
-                            <Icon className="text-dark-accent" strokeWidth={2}/>
-                            <span
-                              className={getNavigationTextClassName(item.href)}
-                            >
-                              {item.title}
-                            </span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ) : (
-            (() => {
-              const Icon = entry.icon;
-
-              return (
-                <SidebarGroup key={entry.href}>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive(entry.href)}
-                          tooltip={entry.title}
-                          className={getNavigationButtonClassName(entry.href)}
-                        >
-                          <Link href={entry.href}>
-                            <Icon className="text-dark-accent" strokeWidth={2} />
-                            <span
-                              className={getNavigationTextClassName(entry.href)}
-                            >
-                              {entry.title}
-                            </span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
-              );
-            })()
-          ),
-        )}
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.href)}
+                      tooltip={item.title}
+                      className={getNavigationButtonClassName(item.href)}
+                    >
+                      <Link href={item.href}>
+                        <Icon className="text-dark-accent" strokeWidth={2} />
+                        <span className={getNavigationTextClassName(item.href)}>
+                          {item.title}
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
     </Sidebar>
   );
