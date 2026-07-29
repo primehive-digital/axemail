@@ -259,6 +259,29 @@ function getEditorText(editor: Editor) {
   return editor.getText().replace(/\u00a0/g, " ").trim();
 }
 
+function prepareComposerHtml(html: string) {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  const paragraphs = Array.from(document.body.querySelectorAll("p"));
+
+  paragraphs.forEach((paragraph, index) => {
+    paragraph.style.lineHeight = "1.35";
+    paragraph.style.marginTop = "0";
+    paragraph.style.marginRight = "0";
+    paragraph.style.marginBottom = index === paragraphs.length - 1 ? "0" : "12px";
+    paragraph.style.marginLeft = "0";
+  });
+
+  document.body.querySelectorAll("li").forEach((item) => {
+    item.style.lineHeight = "1.35";
+  });
+
+  document.body.querySelectorAll<HTMLParagraphElement>("li > p").forEach((paragraph) => {
+    paragraph.style.margin = "0";
+  });
+
+  return document.body.innerHTML;
+}
+
 export function MailComposerCard({ title, description, includeMaskFromEmail, onSend, isSending, isCooldownActive, isQuotaAvailable = true, isLoadingCapacity, replyToOptions = [] }: MailComposerCardProps) {
   const attachmentsInputRef = useRef<HTMLInputElement>(null);
   const signatureInputRef = useRef<HTMLInputElement>(null);
@@ -283,7 +306,7 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
     content: "",
     editorProps: {
       attributes: {
-        class: "min-h-56 px-5 py-4 font-inter text-sm leading-6 text-foreground outline-none",
+        class: "min-h-56 px-5 py-4 font-inter text-sm leading-[1.35] text-foreground outline-none [&_p]:my-3 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_li>p]:my-0",
       },
     },
   });
@@ -394,7 +417,7 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
         subject,
         fromEmail: includeMaskFromEmail ? `${fromEmailName}@uspto.${extension}` : undefined,
         attachments,
-        content: editor.getHTML(),
+        content: prepareComposerHtml(editor.getHTML()),
       });
       resetTransientFields(form);
     } catch {
@@ -499,6 +522,9 @@ export function MailComposerCard({ title, description, includeMaskFromEmail, onS
                   <EditorContent editor={editor} />
                 </div>
               </div>
+              <p className="mt-2 font-inter text-xs text-muted-foreground">
+                Enter starts a new paragraph. Shift + Enter adds a compact line break.
+              </p>
             </div>
           </fieldset>
 
